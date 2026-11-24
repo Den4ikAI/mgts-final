@@ -1,0 +1,63 @@
+# Local stack: Kafka (Redpanda, Kafka API compatible), Kafka UI, Postgres, API.
+#   docker compose up -d redpanda console postgres   # infra only, run api/web locally
+#   docker compose up -d --build                     # everything
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.2.7
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --mode dev-container
+    ports: ["19092:19092"]
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health", "--exit-when-healthy"]
+      interval: 5s
+      retries: 20
+
+  topics:
+    image: redpandadata/redpanda:v24.2.7
+    depends_on: { redpanda: { condition: service_healthy } }
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        rpk -X brokers=redpanda:9092 topic create frames.ingested detections.created -p 3 || true
+        rpk -X brokers=redpanda:9092 topic create object.events -p 6 -c retention.ms=-1 || true
+    restart: "no"
+
+  console:
+    image: redpandadata/console:v2.7.2
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports: ["8081:8080"]
+    depends_on: [redpanda]
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mgts
+      POSTGRES_PASSWORD: mgts
+      POSTGRES_DB: mgts
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mgts"]
+      interval: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://mgts:mgts@postgres:5432/mgts
+      KAFKA_BROKERS: redpanda:9092
+      RUST_LOG: info,api=debug
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      topics: { condition: service_completed_successfully }
+
+volumes:
+  pgdata:

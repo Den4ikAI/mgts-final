@@ -1,0 +1,10 @@
+backend/target/
+web/node_modules/
+web/dist/
+web/.angular/
+.env
+*.local
+.DS_Store
+.idea/
+.vscode/
+data/
