@@ -21,9 +21,9 @@ import { Api, Detection, ReviewDecision } from '../../core/api';
         </div>
         <p class="why">{{ d.rationale }}</p>
         <footer>
-          <button (click)="decide('confirm')">Подтвердить <kbd>Y</kbd></button>
-          <button (click)="decide('reject')">Ложное <kbd>N</kbd></button>
-          <button (click)="decide('need_recapture')">Нужен кадр <kbd>R</kbd></button>
+          <button class="mg-btn mg-btn--confirm" (click)="decide('confirm')">Подтвердить <span class="mg-kbd">Y</span></button>
+          <button class="mg-btn mg-btn--reject" (click)="decide('reject')">Ложное <span class="mg-kbd">N</span></button>
+          <button class="mg-btn" (click)="decide('need_recapture')">Нужен кадр <span class="mg-kbd">R</span></button>
         </footer>
       </article>
     } @else {
@@ -32,13 +32,13 @@ import { Api, Detection, ReviewDecision } from '../../core/api';
   `,
   styles: `
     .card { border: 1px solid var(--line); border-radius: 12px; padding: 16px; max-width: 720px; background: var(--surface); }
-    .card.critical { border-color: var(--danger); }
+    .card.critical { border-color: var(--status-defect); }
     header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-    time { margin-left: auto; color: var(--muted); }
+    time { margin-left: auto; color: var(--ink-muted); }
     .evidence img, .ph { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; margin: 12px 0; }
-    .ph { display: grid; place-items: center; background: var(--surface-2); color: var(--muted); }
+    .ph { display: grid; place-items: center; background: var(--surface-2); color: var(--ink-muted); }
     footer { display: flex; gap: 8px; flex-wrap: wrap; }
-    kbd { opacity: .6; margin-left: 4px; }
+    
   `,
 })
 export class QueuePage {

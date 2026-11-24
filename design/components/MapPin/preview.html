@@ -1,0 +1,16 @@
+<!-- @dsCard group="Карта" height=120 subtitle="Пины по статусам на фоне карты" -->
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><style>body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:var(--font-sans)} .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}</style></head>
+<body class="mg">
+<div style="position:relative;height:88px;border-radius:var(--radius-md);background:var(--surface-2);overflow:hidden">
+  <svg viewBox="0 0 400 88" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><path d="M0 60 L400 30 M120 0 L160 88 M300 0 L260 88" stroke="var(--line)" stroke-width="8" fill="none"/></svg>
+  <div class="row" style="position:absolute;inset:0;justify-content:space-around">
+    <span class="mg-pin mg-pin--ok" title="Норма"></span>
+    <span class="mg-pin mg-pin--suspected" title="Проверить"></span>
+    <span class="mg-pin mg-pin--defect" title="Дефект"></span>
+    <span class="mg-pin mg-pin--unseen" title="Не наблюдается"></span>
+    <span class="mg-pin mg-pin--critical" title="Критично"></span>
+  </div>
+</div>
+</body></html>

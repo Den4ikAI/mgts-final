@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { Api, ObjectStatus, STATUS_LABEL } from '../../core/api';
+import { Api, ObjectStatus, STATUS_LABEL, pillVariant } from '../../core/api';
 
 @Component({
   selector: 'app-dashboard',
@@ -7,7 +7,7 @@ import { Api, ObjectStatus, STATUS_LABEL } from '../../core/api';
     <h1>Сводка</h1>
     <div class="tiles">
       @for (s of stats(); track s.status) {
-        <div class="tile"><span class="status" [attr.data-status]="s.status">{{ label[s.status] }}</span><b>{{ s.count }}</b></div>
+        <div class="tile"><span class="mg-pill" [class]="'mg-pill mg-pill--' + pill(s.status)">{{ label[s.status] }}</span><b>{{ s.count }}</b></div>
       }
     </div>
   `,
@@ -19,6 +19,7 @@ import { Api, ObjectStatus, STATUS_LABEL } from '../../core/api';
 })
 export class DashboardPage {
   readonly label = STATUS_LABEL;
+  readonly pill = pillVariant;
   readonly stats = signal<{ status: ObjectStatus; count: number }[]>([]);
   constructor() {
     inject(Api).stats().subscribe((s) => this.stats.set(s));

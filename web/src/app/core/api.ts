@@ -85,3 +85,6 @@ export const STATUS_LABEL: Record<ObjectStatus, string> = {
   defect: 'Дефект',
   not_observed: 'Не наблюдается',
 };
+
+/** Maps an object status to the design-system StatusPill / MapPin modifier. */
+export const pillVariant = (s: ObjectStatus) => (s === 'not_observed' ? 'unseen' : s);

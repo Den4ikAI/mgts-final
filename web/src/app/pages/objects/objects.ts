@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Api, InfraObject, STATUS_LABEL } from '../../core/api';
+import { Api, InfraObject, STATUS_LABEL, pillVariant } from '../../core/api';
 
 /** Object registry with statuses. The map view goes here once the design is ready. */
 @Component({
@@ -14,7 +14,7 @@ import { Api, InfraObject, STATUS_LABEL } from '../../core/api';
         <tr>
           <td>{{ o.id }}</td>
           <td>{{ o.kind === 'cable_well' ? 'Колодец' : 'Опора' }}</td>
-          <td><span class="status" [attr.data-status]="o.status">{{ label[o.status] }}</span></td>
+          <td><span class="mg-pill" [class]="'mg-pill mg-pill--' + pill(o.status)">{{ label[o.status] }}</span></td>
           <td>{{ o.last_defect_type ?? '—' }}</td>
           <td>{{ o.last_seen_at | date: 'dd.MM HH:mm' }}</td>
         </tr>
@@ -28,6 +28,7 @@ import { Api, InfraObject, STATUS_LABEL } from '../../core/api';
 })
 export class ObjectsPage {
   readonly label = STATUS_LABEL;
+  readonly pill = pillVariant;
   readonly objects = signal<InfraObject[]>([]);
   constructor() {
     inject(Api).objects().subscribe((o) => this.objects.set(o));

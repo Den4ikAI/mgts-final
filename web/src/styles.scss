@@ -1,14 +1,6 @@
-/* Placeholder tokens — replaced by the МГТС design system from Claude Design. */
-:root {
-  --bg: #061233; --surface: #0b1d4d; --surface-2: #102760; --line: #1d3a80;
-  --text: #e8f1ff; --muted: #8aa3d6; --accent: #22d3ee; --danger: #ff4d5e;
-  --ok: #34d399; --warn: #fbbf24; --gray: #64748b;
-  color-scheme: dark;
-}
-body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
-button { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
-button:hover { border-color: var(--accent); }
-.status { padding: 2px 8px; border-radius: 999px; font-size: 12px; background: var(--gray); }
-.status[data-status='ok'] { background: var(--ok); color: #04210f; }
-.status[data-status='suspected'] { background: var(--warn); color: #2b1d00; }
-.status[data-status='defect'] { background: var(--danger); }
+/* Design system: МГТС Инфраструктура (Claude Design), source in /design. */
+@import 'styles/mgts.css';
+@import 'styles/tokens.css';
+
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); }
+h1 { font: 600 22px/28px var(--font-display); }
