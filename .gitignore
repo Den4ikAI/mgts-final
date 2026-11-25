@@ -8,3 +8,5 @@ web/.angular/
 .idea/
 .vscode/
 data/
+openrouter_key.txt
+__pycache__/
