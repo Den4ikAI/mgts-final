@@ -37,6 +37,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/stream", get(stream))
         .route("/api/dev/detections", post(dev_inject_detection))
         .merge(crate::auth::routes::router())
+        .merge(crate::files::router())
         .with_state(state)
 }
 

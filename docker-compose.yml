@@ -60,6 +60,14 @@ services:
       REFRESH_TTL_SECS: ${REFRESH_TTL_SECS:-2592000}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       SEED_DEMO_USERS: ${SEED_DEMO_USERS:-1}
+      # Dataset photos (/api/media), ML reports (/api/quality), class labels (/api/taxonomy).
+      MEDIA_ROOT: /data
+      RUNS_DIR: /runs
+      TAXONOMY_PATH: /taxonomy.json
+    volumes:
+      - ${DATASET_DIR:-./data}:/data:ro
+      - ./ml/runs:/runs:ro
+      - ./ml/taxonomy.json:/taxonomy.json:ro
     ports: ["8080:8080"]
     depends_on:
       postgres: { condition: service_healthy }

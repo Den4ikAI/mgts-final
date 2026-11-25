@@ -11,7 +11,7 @@
 | Веб-интерфейс | Angular 20 (standalone, zoneless, signals) | `web/` |
 | Журнал событий | Kafka (локально Redpanda) | `docker-compose.yml` |
 | Read-модель | Postgres | `backend/migrations/` |
-| ML | Python-воркер, общается только через Kafka | _в работе_ |
+| ML | Python-воркер на Gemini Decision (OpenRouter), пишет в Kafka | [`ml/`](ml/README.md) |
 | Дизайн | Claude Design, дизайн-система «МГТС Инфраструктура» | `design/`, [`docs/design.md`](docs/design.md) |
 
 ## Архитектура

@@ -1,5 +1,6 @@
 mod auth;
 mod error;
+mod files;
 mod kafka;
 mod projection;
 mod routes;
@@ -21,6 +22,7 @@ pub struct AppState {
     pub live: broadcast::Sender<String>,
     pub dev_endpoints: bool,
     pub auth: Arc<auth::AuthConfig>,
+    pub files: files::FileDirs,
 }
 
 fn env(key: &str, default: &str) -> String {
@@ -69,6 +71,7 @@ async fn main() -> anyhow::Result<()> {
         live,
         dev_endpoints: env("DEV_ENDPOINTS", "1") != "0",
         auth,
+        files: files::FileDirs::from_env(),
     };
     let app = routes::router(state)
         .layer(CorsLayer::permissive())
