@@ -1,0 +1,51 @@
+{
+  "_comment": "Утром заменить classes/aliases на виды повреждений из датасета организаторов. Код менять не нужно.",
+  "context": "Photo from a city service vehicle camera, Moscow street. Assess the main (closest, most prominent) telecom infrastructure object: a cable well hatch or a utility pole with overhead cables.",
+
+  "object_question": {
+    "instructions": "Is a cable well (manhole cover, hatch, or an open/missing hatch opening), a utility pole or overhead cables visible and assessable in the photo?",
+    "true": "Such an object is visible and its condition can be assessed.",
+    "false": "No such object, or the photo is too blurry, dark, snowy or occluded to assess it."
+  },
+
+  "kind_question": {
+    "instructions": "Which kind of object is the main one in the photo?",
+    "classes": {
+      "cable_well": "A hatch / manhole cover / cable well in the road or sidewalk.",
+      "dual_pole": "A utility pole, lighting pole or overhead cables."
+    }
+  },
+
+  "defect_question": {
+    "instructions": "What is the condition of the main infrastructure object in the photo?"
+  },
+
+  "classes": {
+    "none":         { "label": "Объекта нет",       "kind": null,         "ok": true,  "description": "There is no manhole cover, hatch, utility pole or overhead cable to assess in the photo.", "aliases": [] },
+    "ok":           { "label": "Норма",             "kind": null,         "ok": true,  "description": "Object looks intact, nothing to report.", "aliases": ["норма", "без повреждений", "нет дефекта"] },
+    "open_hatch":   { "label": "Открытый люк",      "kind": "cable_well", "ok": false, "description": "Hatch is open, displaced or missing; an opening is visible.", "aliases": ["открытый люк", "отсутствует крышка", "смещена крышка"] },
+    "broken_cover": { "label": "Повреждена крышка", "kind": "cable_well", "ok": false, "description": "Cover is cracked, broken or partially collapsed.", "aliases": ["сломана крышка", "трещина крышки"] },
+    "subsidence":   { "label": "Просадка",          "kind": "cable_well", "ok": false, "description": "Road surface around the hatch has sunk, cracked or there is a height step.", "aliases": ["просадка", "провал"] },
+    "paved_over":   { "label": "Закатан в асфальт", "kind": "cable_well", "ok": false, "description": "Hatch is covered by asphalt or debris and is not accessible.", "aliases": ["закатан", "заасфальтирован"] },
+    "pole_tilt":    { "label": "Наклон опоры",      "kind": "dual_pole",  "ok": false, "description": "Pole is visibly tilted, fallen or structurally damaged.", "aliases": ["наклон опоры", "падение опоры"] },
+    "cable_sag":    { "label": "Провис кабеля",     "kind": "dual_pole",  "ok": false, "description": "Cable hangs too low, is tangled or detached.", "aliases": ["провис кабеля", "обрыв кабеля"] }
+  },
+
+  "severity_question": {
+    "instructions": "How dangerous is the condition for pedestrians and traffic right now?",
+    "levels": [
+      { "severity": "low",      "description": "No danger." },
+      { "severity": "low",      "description": "Minor, can wait for planned maintenance." },
+      { "severity": "medium",   "description": "Noticeable, should be fixed within days." },
+      { "severity": "critical", "description": "Critical: immediate threat to life or vehicles." }
+    ]
+  },
+
+  "thresholds": {
+    "_comment": "object_min: если модель склоняется к норме, а объект виден хуже порога — кадр 'не наблюдается' (дефекты этот порог не гасит). auto_ok: норма увереннее — подтверждается без человека. critical_prob: P(последний уровень опасности) выше — тревога в обход очереди. high_score: ожидаемый уровень опасности выше — severity high.",
+    "object_min": 0.75,
+    "auto_ok": 0.85,
+    "critical_prob": 0.5,
+    "high_score": 2.0
+  }
+}

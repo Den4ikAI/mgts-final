@@ -60,6 +60,7 @@ QUESTIONS = {
         "type": "choice",
         "instructions": "What is the main condition of the infrastructure object in the photo?",
         "criteria": {
+            "none": "There is no manhole cover, hatch, utility pole or overhead cable to assess in the photo.",
             "ok": "Object looks intact, nothing to report.",
             "open_hatch": "Hatch is open, displaced or missing; an opening is visible.",
             "broken_cover": "Cover is cracked, broken or partially collapsed.",

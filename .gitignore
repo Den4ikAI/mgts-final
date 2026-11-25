@@ -10,3 +10,6 @@ web/.angular/
 data/
 openrouter_key.txt
 __pycache__/
+ml/.venv/
+ml/.cache/
+ml/runs/
