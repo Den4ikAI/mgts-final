@@ -1,7 +1,12 @@
 <nav>
   <span class="brand">МГТС · Инфраструктура</span>
-  <a routerLink="/queue" routerLinkActive="active">Очередь</a>
-  <a routerLink="/objects" routerLinkActive="active">Объекты</a>
-  <a routerLink="/dashboard" routerLinkActive="active">Сводка</a>
+  @if (auth.user(); as u) {
+    @if (auth.can('review')) { <a routerLink="/queue" routerLinkActive="active">Очередь</a> }
+    <a routerLink="/objects" routerLinkActive="active">Объекты</a>
+    @if (auth.can('stats_read')) { <a routerLink="/dashboard" routerLinkActive="active">Сводка</a> }
+    @if (auth.can('users_manage')) { <a routerLink="/users" routerLinkActive="active">Пользователи</a> }
+    <span class="who">{{ u.display_name }} · {{ roleLabel[u.role] }}</span>
+    <button class="mg-btn" (click)="auth.logout()">Выйти</button>
+  }
 </nav>
 <main><router-outlet /></main>

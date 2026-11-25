@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService, ROLE_LABEL } from './core/auth';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {}
+export class App {
+  readonly auth = inject(AuthService);
+  readonly roleLabel = ROLE_LABEL;
+}

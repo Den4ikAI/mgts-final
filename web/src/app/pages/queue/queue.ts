@@ -59,7 +59,7 @@ export class QueuePage {
     const d = this.current();
     if (!d?.object_id) return;
     this.items.update((xs) => xs.slice(1)); // optimistic
-    this.api.review(d.object_id, { detection_id: d.id, decision, reviewer: 'dispatcher' }).subscribe();
+    this.api.review(d.object_id, { detection_id: d.id, decision }).subscribe();
   }
 
   @HostListener('window:keydown', ['$event'])

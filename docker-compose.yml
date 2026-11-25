@@ -54,6 +54,12 @@ services:
       DATABASE_URL: postgres://mgts:mgts@postgres:5432/mgts
       KAFKA_BROKERS: redpanda:9092
       RUST_LOG: info,api=debug
+      # Auth. Empty JWT_SECRET = random per start (sessions die on restart).
+      JWT_SECRET: ${JWT_SECRET:-}
+      ACCESS_TTL_SECS: ${ACCESS_TTL_SECS:-900}
+      REFRESH_TTL_SECS: ${REFRESH_TTL_SECS:-2592000}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-1}
     ports: ["8080:8080"]
     depends_on:
       postgres: { condition: service_healthy }

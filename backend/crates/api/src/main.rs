@@ -1,8 +1,10 @@
+mod auth;
+mod error;
 mod kafka;
 mod projection;
 mod routes;
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use anyhow::Context;
 use sqlx::postgres::PgPoolOptions;
@@ -18,6 +20,7 @@ pub struct AppState {
     pub producer: kafka::Producer,
     pub live: broadcast::Sender<String>,
     pub dev_endpoints: bool,
+    pub auth: Arc<auth::AuthConfig>,
 }
 
 fn env(key: &str, default: &str) -> String {
@@ -42,6 +45,8 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("connect postgres")?;
     sqlx::migrate!("../../migrations").run(&db).await?;
+    let auth = Arc::new(auth::AuthConfig::from_env()?);
+    auth::bootstrap(&db).await?;
 
     let producer = kafka::Producer::new(&brokers)?;
     let (live, _) = broadcast::channel(1024);
@@ -63,6 +68,7 @@ async fn main() -> anyhow::Result<()> {
         producer,
         live,
         dev_endpoints: env("DEV_ENDPOINTS", "1") != "0",
+        auth,
     };
     let app = routes::router(state)
         .layer(CorsLayer::permissive())

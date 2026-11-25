@@ -64,17 +64,40 @@ export class Api {
   stats() {
     return this.http.get<{ status: ObjectStatus; count: number }[]>('/api/stats');
   }
-  review(objectId: string, body: { detection_id?: string; decision: ReviewDecision; reject_reason?: string; reviewer: string; comment?: string }) {
+  review(objectId: string, body: { detection_id?: string; decision: ReviewDecision; reject_reason?: string; comment?: string }) {
     return this.http.post(`/api/objects/${objectId}/reviews`, body);
   }
 
-  /** Live object events (SSE). */
+  /**
+   * Live object events (SSE). EventSource cannot send headers, so each
+   * (re)connect first fetches a 60-second stream ticket with the bearer token.
+   */
   live(): Observable<{ key: string; payload: { type: string } & Record<string, unknown> }> {
     return new Observable((sub) => {
-      const es = new EventSource('/api/stream');
-      es.onmessage = (m) => sub.next(JSON.parse(m.data));
-      es.onerror = () => {}; // EventSource reconnects by itself
-      return () => es.close();
+      let es: EventSource | undefined;
+      let retry: ReturnType<typeof setTimeout> | undefined;
+      let closed = false;
+      const reconnect = (ms: number) => {
+        es?.close();
+        if (!closed) retry = setTimeout(open, ms);
+      };
+      const open = () =>
+        this.http.post<{ ticket: string }>('/api/auth/stream-ticket', {}).subscribe({
+          next: ({ ticket }) => {
+            if (closed) return;
+            es = new EventSource(`/api/stream?ticket=${encodeURIComponent(ticket)}`);
+            es.onmessage = (m) => sub.next(JSON.parse(m.data));
+            // The built-in reconnect would reuse an expired ticket; get a new one instead.
+            es.onerror = () => reconnect(2000);
+          },
+          error: () => reconnect(5000),
+        });
+      open();
+      return () => {
+        closed = true;
+        clearTimeout(retry);
+        es?.close();
+      };
     });
   }
 }

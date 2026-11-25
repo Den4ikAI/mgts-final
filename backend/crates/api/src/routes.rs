@@ -3,10 +3,7 @@ use std::convert::Infallible;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{
-        sse::{Event, KeepAlive, Sse},
-        IntoResponse, Response,
-    },
+    response::sse::{Event, KeepAlive, Sse},
     routing::{get, post},
     Json, Router,
 };
@@ -22,7 +19,11 @@ use domain::{
     ReviewDecision, Severity,
 };
 
-use crate::AppState;
+use crate::{
+    auth::{AuthUser, Perm, TokenKind},
+    error::{ApiError, ApiResult},
+    AppState,
+};
 
 pub fn router(state: AppState) -> Router {
     Router::new()
@@ -35,25 +36,10 @@ pub fn router(state: AppState) -> Router {
         .route("/api/stats", get(stats))
         .route("/api/stream", get(stream))
         .route("/api/dev/detections", post(dev_inject_detection))
+        .merge(crate::auth::routes::router())
         .with_state(state)
 }
 
-pub struct ApiError(anyhow::Error);
-
-impl<E: Into<anyhow::Error>> From<E> for ApiError {
-    fn from(e: E) -> Self {
-        Self(e.into())
-    }
-}
-
-impl IntoResponse for ApiError {
-    fn into_response(self) -> Response {
-        tracing::error!("{:#}", self.0);
-        (StatusCode::INTERNAL_SERVER_ERROR, self.0.to_string()).into_response()
-    }
-}
-
-type ApiResult<T> = Result<Json<T>, ApiError>;
 
 #[derive(Serialize, sqlx::FromRow)]
 pub struct ObjectRow {
@@ -106,8 +92,10 @@ struct ObjectFilter {
 
 async fn list_objects(
     State(s): State<AppState>,
+    user: AuthUser,
     Query(f): Query<ObjectFilter>,
 ) -> ApiResult<Vec<ObjectRow>> {
+    user.require(Perm::ObjectsRead)?;
     let rows = sqlx::query_as::<_, ObjectRow>(
         "SELECT * FROM objects
          WHERE ($1::text IS NULL OR status = $1) AND ($2::text IS NULL OR kind = $2)
@@ -128,13 +116,15 @@ struct ObjectDetails {
 
 async fn get_object(
     State(s): State<AppState>,
+    user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<ObjectDetails>, ApiError> {
+    user.require(Perm::ObjectsRead)?;
     let object = sqlx::query_as::<_, ObjectRow>("SELECT * FROM objects WHERE id = $1")
         .bind(&id)
         .fetch_optional(&s.db)
         .await?
-        .ok_or_else(|| anyhow::anyhow!("object {id} not found"))?;
+        .ok_or_else(|| ApiError::not_found(format!("object {id} not found")))?;
     let detections = sqlx::query_as::<_, DetectionRow>(
         "SELECT * FROM detections WHERE object_id = $1 ORDER BY created_at DESC LIMIT 50",
     )
@@ -146,8 +136,10 @@ async fn get_object(
 
 async fn object_history(
     State(s): State<AppState>,
+    user: AuthUser,
     Path(id): Path<String>,
 ) -> ApiResult<Vec<EventRow>> {
+    user.require(Perm::ObjectsRead)?;
     let rows = sqlx::query_as::<_, EventRow>(
         "SELECT event_id, type, payload, source, occurred_at
          FROM object_events WHERE object_id = $1 ORDER BY occurred_at",
@@ -159,7 +151,8 @@ async fn object_history(
 }
 
 /// Pending detections, critical first. One row per detection; the UI groups by object.
-async fn review_queue(State(s): State<AppState>) -> ApiResult<Vec<DetectionRow>> {
+async fn review_queue(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<DetectionRow>> {
+    user.require(Perm::ObjectsRead)?;
     let rows = sqlx::query_as::<_, DetectionRow>(
         "SELECT * FROM detections WHERE review_state = 'pending'
          ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1
@@ -178,7 +171,8 @@ struct StatusCount {
     count: i64,
 }
 
-async fn stats(State(s): State<AppState>) -> ApiResult<Vec<StatusCount>> {
+async fn stats(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<StatusCount>> {
+    user.require(Perm::StatsRead)?;
     let rows = sqlx::query_as::<_, StatusCount>(
         "SELECT status, count(*) AS count FROM objects GROUP BY status",
     )
@@ -192,22 +186,24 @@ struct ReviewRequest {
     detection_id: Option<Uuid>,
     decision: ReviewDecision,
     reject_reason: Option<RejectReason>,
-    reviewer: String,
     comment: Option<String>,
 }
 
 /// Reviews are written to Kafka, not the DB: the projection applies them, so
 /// the event log stays the single source of truth.
+/// The reviewer is taken from the token, never from the body.
 async fn post_review(
     State(s): State<AppState>,
+    user: AuthUser,
     Path(id): Path<String>,
     Json(r): Json<ReviewRequest>,
 ) -> Result<StatusCode, ApiError> {
+    user.require(Perm::Review)?;
     let ev = ObjectEvent::Reviewed {
         detection_id: r.detection_id,
         decision: r.decision,
         reject_reason: r.reject_reason,
-        reviewer: r.reviewer,
+        reviewer: user.0.login.clone(),
         comment: r.comment,
     };
     s.producer
@@ -216,13 +212,24 @@ async fn post_review(
     Ok(StatusCode::ACCEPTED)
 }
 
-/// Live object events as Server-Sent Events.
+#[derive(Deserialize)]
+struct StreamQuery {
+    ticket: String,
+}
+
+/// Live object events as Server-Sent Events. Auth: `?ticket=` from
+/// `POST /api/auth/stream-ticket`, since EventSource cannot send headers.
 async fn stream(
     State(s): State<AppState>,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    Query(q): Query<StreamQuery>,
+) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, ApiError> {
+    let claims = s.auth.verify(&q.ticket, TokenKind::Stream)?;
+    if !claims.role.can(Perm::ObjectsRead) {
+        return Err(ApiError::forbidden());
+    }
     let rx = BroadcastStream::new(s.live.subscribe());
     let events = rx.filter_map(|m| m.ok().map(|json| Ok(Event::default().data(json))));
-    Sse::new(events).keep_alive(KeepAlive::default())
+    Ok(Sse::new(events).keep_alive(KeepAlive::default()))
 }
 
 #[derive(Deserialize)]
@@ -250,11 +257,13 @@ fn default_conf() -> f32 {
 /// demoed without the ML worker. Disable with DEV_ENDPOINTS=0.
 async fn dev_inject_detection(
     State(s): State<AppState>,
+    user: AuthUser,
     Json(d): Json<DevDetection>,
 ) -> Result<Json<Uuid>, ApiError> {
     if !s.dev_endpoints {
-        return Err(anyhow::anyhow!("dev endpoints disabled").into());
+        return Err(ApiError::not_found("dev endpoints disabled"));
     }
+    user.require(Perm::DevTools)?;
     let det = DetectionCreated {
         detection_id: Uuid::now_v7(),
         frame_id: Uuid::now_v7(),
