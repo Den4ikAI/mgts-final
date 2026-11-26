@@ -69,6 +69,9 @@ pub struct FrameRow {
     /// Разметка организаторов, если была
     #[schema(value_type = Option<domain::GroundTruth>)]
     pub truth: Option<Value>,
+    /// Все шкафы/щиты в кадре с рамками (второй этап, приходит через несколько секунд после вердикта)
+    #[schema(value_type = Option<Vec<domain::DetectedObject>>)]
+    pub objects: Option<Value>,
 }
 
 /// Frame + its verdict (if any). The verdict may fill in what the uploader did not
@@ -78,8 +81,8 @@ pub const SELECT: &str = "SELECT f.id, f.source, f.media_uri, f.file_name, f.upl
         COALESCE(f.lat, (v.result->'position'->>'lat')::float8) AS lat,
         COALESCE(f.lon, (v.result->'position'->>'lon')::float8) AS lon,
         COALESCE(v.status, 'queued') AS status, v.result, f.size_bytes, f.created_at, v.analyzed_at,
-        f.batch_id, f.truth
-    FROM frames f LEFT JOIN frame_verdicts v ON v.frame_id = f.id";
+        f.batch_id, f.truth, o.objects
+    FROM frames f LEFT JOIN frame_verdicts v ON v.frame_id = f.id LEFT JOIN frame_objects o ON o.frame_id = f.id";
 
 #[derive(Serialize, ToSchema)]
 pub struct Accepted {

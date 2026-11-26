@@ -38,6 +38,7 @@ docker compose up -d redpanda topics console postgres s3   # Kafka :19092, Kafka
 cd backend && SEED_DEMO_USERS=1 S3_ENDPOINT=http://localhost:8333 S3_ACCESS_KEY=mgts S3_SECRET_KEY=mgts-secret \
   MEDIA_ROOT="$PWD/../data/Датасет-ДСС" cargo run -p api      # API :8080, демо-пользователи, бакет создаётся сам
 cd ml && .venv/bin/python consumer.py                         # ML: слушает frames.ingested, отвечает frames.analyzed
+cd ml && .venv/bin/python boxes.py                            # ML, второй этап: рамки всех ТКШ/РЩ в кадре → frames.objects
 cd web && npm i && npm start                                  # UI :4200 (прокси /api -> :8080)
 ```
 

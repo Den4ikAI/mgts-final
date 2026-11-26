@@ -12,6 +12,8 @@ pub mod topics {
     pub const FRAMES: &str = "frames.ingested";
     /// The model's verdict for every frame, including "fine" and "not observed" (ML -> api). Key: frame_id.
     pub const FRAMES_ANALYZED: &str = "frames.analyzed";
+    /// Every cabinet / board in the frame with its own box and condition (ML -> api). Key: frame_id.
+    pub const FRAMES_OBJECTS: &str = "frames.objects";
     /// Raw model output (ML -> backend). Key: frame_id.
     pub const DETECTIONS: &str = "detections.created";
     /// Domain event log, the history of every infrastructure object. Key: object_id.
@@ -114,6 +116,30 @@ pub struct FrameIngested {
     pub batch_id: Option<Uuid>,
     /// Organizers' annotation, when the import had one.
     pub truth: Option<GroundTruth>,
+}
+
+/// Every cabinet / board the second-stage model found in a frame. Arrives a few
+/// seconds after `FrameAnalyzed`; the verdict does not wait for it.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct FrameObjects {
+    pub frame_id: Uuid,
+    pub objects: Vec<DetectedObject>,
+    pub model: String,
+    pub latency_ms: Option<u32>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct DetectedObject {
+    /// Normalized to the frame: x, y = top-left corner, all in 0..1.
+    pub bbox: BBox,
+    /// tksh | rsh
+    pub kind: Option<String>,
+    /// Taxonomy class key: ok | paint | deformation | mount_failure
+    pub condition: String,
+    pub confidence: f32,
+    /// Short Russian note for the evidence card.
+    pub note: Option<String>,
 }
 
 /// One row of the organizers' annotation, matched to a photo.

@@ -12,6 +12,7 @@
 |---|---|---|---|
 | `frames.ingested` | api (`POST /api/frames`), позже — машины | `frame_id` | `FrameIngested` |
 | `frames.analyzed` | ML (`ml/consumer.py`) | `frame_id` | `FrameAnalyzed` |
+| `frames.objects` | ML (`ml/boxes.py`) | `frame_id` | `FrameObjects` |
 | `detections.created` | ML (`consumer.py`, `worker.py`) | `frame_id` | `DetectionCreated` |
 | `object.events` | api | `object_id` | `ObjectEvent` (тег `type`) |
 
@@ -24,6 +25,18 @@ POST /api/frames ─► S3 (frames/YYYY/MM/DD/<sha256>.jpg) ─► frames.ingest
 ```
 
 Около 2 с от загрузки до вердикта. Повторная загрузка того же фото не вызывает модель: ответы кэшируются по sha256.
+
+## `FrameObjects` (все объекты в кадре, второй этап)
+
+Приходит через 5–8 с после вердикта, вердикт его не ждёт. Модель: Gemini 4 Hydrogen (чат-API, JSON со списком объектов);
+Jev на один вопрос отдаёт ровно одну рамку, поэтому для нескольких объектов не подходит.
+
+`frame_id`, `objects: [{ bbox: {x, y, w, h}, kind: tksh|rsh|null, condition: ok|paint|deformation|mount_failure, confidence, note }]`,
+`model`, `latency_ms?`, `error?`. `bbox` — доли кадра 0..1, `x, y` — левый верхний угол (как `DetectionCreated.bbox`).
+
+Для фронта: `GET /api/frames/{id}` отдаёт их в поле `objects`; live-поток шлёт `{key: frame_id, payload: {type: "frame_objects", ...}}`.
+Рисовать: прямоугольник `left = x·W, top = y·H, width = w·W, height = h·H` поверх фото, цвет по `condition`
+(ok — зелёный, paint — жёлтый, deformation — оранжевый, mount_failure — красный), подпись «ТКШ · Механическое повреждение», `note` в подсказке.
 
 ## `FrameIngested` (фото в хранилище)
 

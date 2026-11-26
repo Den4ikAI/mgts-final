@@ -520,6 +520,8 @@ struct Line {
     lat: Option<f64>,
     lon: Option<f64>,
     why: String,
+    /// "ТКШ — норма; РЩ — механическое повреждение"
+    objects: String,
     photo: String,
     truth: Option<(String, bool)>,
     order: u8,
@@ -565,6 +567,11 @@ fn lines(rows: &[FrameRow], tax: &Value) -> Vec<Line> {
             lat: f.lat,
             lon: f.lon,
             why: get("rationale").unwrap_or_default(),
+            objects: f.objects.as_ref().and_then(Value::as_array).map(|xs| xs.iter().map(|o| {
+                let k = o["kind"].as_str().map(kind).unwrap_or_else(|| "объект".into());
+                let c = o["condition"].as_str().map(|c| label(c).to_lowercase()).unwrap_or_default();
+                format!("{k} — {c}")
+            }).collect::<Vec<_>>().join("; ")).unwrap_or_default(),
             photo: f.media_uri.clone(),
             truth: f.truth.as_ref().map(|t| {
                 let class = t["class"].as_str().unwrap_or("");
@@ -578,8 +585,8 @@ fn lines(rows: &[FrameRow], tax: &Value) -> Vec<Line> {
     out
 }
 
-const HEAD: [&str; 13] = ["№", "Файл", "Объект", "Тип", "Вывод", "Вид повреждения", "Опасность", "Уверенность",
-    "Рекомендация", "Широта", "Долгота", "Обоснование модели", "Фото в системе"];
+const HEAD: [&str; 14] = ["№", "Файл", "Объект", "Тип", "Вывод", "Вид повреждения", "Опасность", "Уверенность",
+    "Рекомендация", "Широта", "Долгота", "Обоснование модели", "Объекты в кадре", "Фото в системе"];
 
 #[utoipa::path(get, path = "/api/frames/export", tag = "datasets", summary = "Таблица результатов: объект, вывод, рекомендация (XLSX/CSV)",
     params(ExportQuery), security(("bearer" = [])),
@@ -635,7 +642,7 @@ fn csv(lines: &[Line], with_truth: bool) -> String {
     for (i, l) in lines.iter().enumerate() {
         let mut cells = vec![
             (i + 1).to_string(), q(&l.file), q(&l.object), q(&l.kind), q(l.verdict), q(&l.defect), q(&l.severity),
-            num(l.confidence), q(&l.action), num(l.lat), num(l.lon), q(&l.why), q(&l.photo),
+            num(l.confidence), q(&l.action), num(l.lat), num(l.lon), q(&l.why), q(&l.objects), q(&l.photo),
         ];
         if with_truth {
             let (t, ok) = l.truth.clone().unwrap_or_default();
@@ -665,7 +672,7 @@ fn xlsx(lines: &[Line], with_truth: bool, summary: &[(String, usize)]) -> Result
     };
 
     let ws = wb.add_worksheet().set_name("Результат")?;
-    let mut cols: Vec<(&str, f64)> = HEAD.iter().copied().zip([5.0, 34.0, 16.0, 7.0, 18.0, 24.0, 13.0, 11.0, 44.0, 10.0, 10.0, 60.0, 30.0]).collect();
+    let mut cols: Vec<(&str, f64)> = HEAD.iter().copied().zip([5.0, 34.0, 16.0, 7.0, 18.0, 24.0, 13.0, 11.0, 44.0, 10.0, 10.0, 60.0, 36.0, 30.0]).collect();
     if with_truth {
         cols.extend([("Разметка организаторов", 44.0), ("Совпало", 9.0)]);
     }
@@ -691,10 +698,11 @@ fn xlsx(lines: &[Line], with_truth: bool, summary: &[(String, usize)]) -> Result
             ws.write_number_with_format(r, 10, lo, &coord)?;
         }
         ws.write_string_with_format(r, 11, &l.why, &wrap)?;
-        ws.write_string_with_format(r, 12, &l.photo, &wrap)?;
+        ws.write_string_with_format(r, 12, &l.objects, &wrap)?;
+        ws.write_string_with_format(r, 13, &l.photo, &wrap)?;
         if let Some((t, ok)) = &l.truth {
-            ws.write_string_with_format(r, 13, t, &wrap)?;
-            ws.write_string_with_format(r, 14, if *ok { "да" } else { "нет" }, &wrap)?;
+            ws.write_string_with_format(r, 14, t, &wrap)?;
+            ws.write_string_with_format(r, 15, if *ok { "да" } else { "нет" }, &wrap)?;
         }
     }
     ws.set_freeze_panes(1, 0)?;

@@ -13,7 +13,9 @@ import base64
 import io
 import json
 import pathlib
+import random
 import time
+import urllib.error
 import urllib.request
 
 import decision as dec
@@ -21,7 +23,8 @@ import decision as dec
 URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
-def ask(path: pathlib.Path, model: str, effort: str, tax: dict) -> tuple[dict, float, float]:
+def ask(path: pathlib.Path, model: str, effort: str, tax: dict, raw: bytes | None = None) -> tuple[dict, float, float]:
+    """Returns (answer, latency_s, cost_usd). Retries 429 / 5xx / network; `raw` = bytes from S3."""
     classes = list(tax["classes"])
     kinds = list(tax["kind_question"]["classes"])
     cls = "\n".join(f"- {k}: {c['description']}" for k, c in tax["classes"].items() if k != "none")
@@ -44,16 +47,41 @@ Answer JSON only."""
                 "confidence": {"type": "number"},
                 "note_ru": {"type": "string"},
             }}}}}}}
-    img, mime = dec.image_bytes(path, 2048)
+    img, mime = dec.image_bytes(path, 2048, raw)
     body = {"model": model, "reasoning": {"effort": effort}, "response_format": schema, "messages": [{"role": "user", "content": [
         {"type": "text", "text": prompt},
         {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(img).decode()}"}}]}]}
-    req = urllib.request.Request(URL, data=json.dumps(body).encode(),
-                                 headers={"Authorization": f"Bearer {dec.api_key()}", "Content-Type": "application/json"})
-    t0 = time.monotonic()
-    with urllib.request.urlopen(req, timeout=180) as r:
-        res = json.load(r)
-    return json.loads(res["choices"][0]["message"]["content"]), time.monotonic() - t0, (res.get("usage") or {}).get("cost", 0.0)
+    data = json.dumps(body).encode()
+    delay = 2.0
+    for attempt in range(10):
+        req = urllib.request.Request(URL, data=data, headers={"Authorization": f"Bearer {dec.api_key()}", "Content-Type": "application/json"})
+        t0 = time.monotonic()
+        try:
+            with urllib.request.urlopen(req, timeout=180) as r:
+                res = json.load(r)
+            return json.loads(res["choices"][0]["message"]["content"]), time.monotonic() - t0, (res.get("usage") or {}).get("cost", 0.0)
+        except urllib.error.HTTPError as e:
+            msg = e.read().decode(errors="replace")[:300]
+            if e.code in (400, 401, 402, 403, 404):
+                raise dec.FatalApiError(f"HTTP {e.code}: {msg}") from None
+            err = f"HTTP {e.code}: {msg}"
+            if e.code == 429:  # new accounts: 20 requests/min per model
+                delay = max(delay, 15.0)
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            err = f"network: {e}"
+        time.sleep(delay + random.random() * 3)
+        delay = min(delay * 2, 30)
+    raise RuntimeError(err)
+
+
+def to_bbox(box_2d: list) -> dict | None:
+    """Gemini's [ymin, xmin, ymax, xmax] in 0..1000 → {x, y, w, h} in 0..1 (top-left + size)."""
+    if len(box_2d) != 4:
+        return None
+    y0, x0, y1, x1 = (min(1000, max(0, int(v))) / 1000 for v in box_2d)
+    if x1 <= x0 or y1 <= y0:
+        return None
+    return {"x": round(x0, 4), "y": round(y0, 4), "w": round(x1 - x0, 4), "h": round(y1 - y0, 4)}
 
 
 def draw(path: pathlib.Path, objs: list[dict], tax: dict, out: pathlib.Path) -> None:

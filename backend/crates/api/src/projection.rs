@@ -15,7 +15,7 @@ use sqlx::PgPool;
 use tokio::sync::broadcast;
 
 use domain::{
-    topics, DetectionCreated, Envelope, FrameAnalyzed, FrameIngested, ObjectEvent, ObjectStatus,
+    topics, DetectionCreated, Envelope, FrameAnalyzed, FrameIngested, FrameObjects, ObjectEvent, ObjectStatus,
     ReviewDecision, Severity,
 };
 
@@ -47,6 +47,7 @@ impl Projection {
                 topics::OBJECT_EVENTS => self.on_object_event(body).await,
                 topics::FRAMES => self.on_frame(body).await,
                 topics::FRAMES_ANALYZED => self.on_frame_analyzed(body).await,
+                topics::FRAMES_OBJECTS => self.on_frame_objects(body).await,
                 other => {
                     tracing::debug!("ignoring topic {other}");
                     Ok(())
@@ -163,6 +164,30 @@ impl Projection {
         payload["type"] = "frame_analyzed".into();
         let msg = serde_json::json!({ "key": env.key, "payload": payload });
         let _ = self.live.send(msg.to_string());
+        Ok(())
+    }
+
+    /// Boxes for every object in the frame; pushed live so the card can draw them.
+    async fn on_frame_objects(&self, body: &[u8]) -> anyhow::Result<()> {
+        let env: Envelope<FrameObjects> = serde_json::from_slice(body).context("decode frame objects")?;
+        let o = &env.payload;
+        sqlx::query(
+            "INSERT INTO frame_objects (frame_id, objects, model, error, analyzed_at) VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (frame_id) DO UPDATE
+               SET objects = EXCLUDED.objects, model = EXCLUDED.model, error = EXCLUDED.error,
+                   analyzed_at = EXCLUDED.analyzed_at
+               WHERE frame_objects.analyzed_at <= EXCLUDED.analyzed_at",
+        )
+        .bind(o.frame_id)
+        .bind(serde_json::to_value(&o.objects)?)
+        .bind(&o.model)
+        .bind(&o.error)
+        .bind(env.occurred_at)
+        .execute(&self.db)
+        .await?;
+        let mut payload = serde_json::to_value(o)?;
+        payload["type"] = "frame_objects".into();
+        let _ = self.live.send(serde_json::json!({ "key": env.key, "payload": payload }).to_string());
         Ok(())
     }
 

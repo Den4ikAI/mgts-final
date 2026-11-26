@@ -24,7 +24,7 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        rpk -X brokers=redpanda:9092 topic create frames.ingested frames.analyzed detections.created -p 3 || true
+        rpk -X brokers=redpanda:9092 topic create frames.ingested frames.analyzed frames.objects detections.created -p 3 || true
         rpk -X brokers=redpanda:9092 topic create object.events -p 6 -c retention.ms=-1 || true
     restart: "no"
 

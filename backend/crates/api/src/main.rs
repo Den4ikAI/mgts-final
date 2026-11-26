@@ -67,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
     let consumer = kafka::consumer(
         &brokers,
         "api-projection",
-        &[topics::DETECTIONS, topics::OBJECT_EVENTS, topics::FRAMES, topics::FRAMES_ANALYZED],
+        &[topics::DETECTIONS, topics::OBJECT_EVENTS, topics::FRAMES, topics::FRAMES_ANALYZED, topics::FRAMES_OBJECTS],
     )?;
     tokio::spawn(projection.run(consumer));
 
