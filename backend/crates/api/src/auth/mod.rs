@@ -254,7 +254,8 @@ pub async fn bootstrap(db: &sqlx::PgPool) -> anyhow::Result<()> {
     let count: i64 = sqlx::query_scalar("SELECT count(*) FROM users").fetch_one(db).await?;
 
     if count == 0 {
-        if let Ok(pw) = std::env::var("ADMIN_PASSWORD") {
+        // compose passes an empty string when it is not set: treat that as "not set"
+        if let Some(pw) = std::env::var("ADMIN_PASSWORD").ok().filter(|p| !p.is_empty()) {
             let login = std::env::var("ADMIN_LOGIN").unwrap_or_else(|_| "admin".into());
             routes::insert_user(db, &login, "Администратор", Role::Admin, &pw)
                 .await

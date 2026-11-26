@@ -62,7 +62,9 @@ def main() -> None:
     tax = dec.load_taxonomy()
     conditions = {k for k in tax["classes"] if k != "none"}
     kinds = set(tax["kind_question"]["classes"])
-    qh = hashlib.sha256(json.dumps([args.model, args.effort, tax["classes"], tax["kind_question"]], sort_keys=True).encode()).hexdigest()[:12]
+    # Cache key = only what goes into the prompt, so UI-only taxonomy fields (labels, recommendations) keep the cache.
+    qh = hashlib.sha256(json.dumps([args.model, args.effort, tax["context"], {k: c["description"] for k, c in tax["classes"].items()},
+                                    tax["kind_question"]["classes"]], sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:12]
     cache = dec.ROOT / ".cache" / "boxes-llm" / qh
     cache.mkdir(parents=True, exist_ok=True)
     limit = RateLimit(args.rpm)
