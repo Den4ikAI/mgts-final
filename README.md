@@ -53,7 +53,11 @@ cd web && npm i && npm start                                  # UI :4200 (про
 Фото лежат в S3 (локально SeaweedFS, в проде любой S3), в базе и Kafka только ссылки. Без `S3_ENDPOINT` API кладёт
 загрузки в папку `UPLOAD_DIR` (`../data/uploads`). Фото датасета отдаются с диска из `MEDIA_ROOT`.
 
-Всё в контейнерах: `docker compose up -d --build`.
+Всё в контейнерах: `docker compose up -d --build` → интерфейс и API на http://localhost:8080 (нужен `OPENROUTER_API_KEY` в `.env`;
+там же стоит задать постоянный `JWT_SECRET`, иначе вход слетает при перезапуске API).
+
+Показать наружу через обратный SSH-туннель (на сервере `GatewayPorts yes`):
+`nohup setsid infra/tunnel.sh user@host 25565 ~/key > /tmp/tunnel.log 2>&1 &` — сам переподключается при обрыве.
 
 Демо-вход (`SEED_DEMO_USERS=1`, пароль `mgts-demo`): `admin`, `dispatcher`, `manager`, `tech`. Роли и токены: [`docs/auth.md`](docs/auth.md).
 

@@ -84,7 +84,7 @@ services:
       S3_ACCESS_KEY: mgts
       S3_SECRET_KEY: mgts-secret
     volumes:
-      - ${DATASET_DIR:-./data}:/data:ro
+      - ${DATASET_DIR:-./data/Датасет-ДСС}:/data:ro
       - ./ml/runs:/runs:ro
       - ./ml/taxonomy.json:/taxonomy.json:ro
     ports: ["8080:8080"]
