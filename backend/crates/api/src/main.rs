@@ -1,10 +1,12 @@
 mod auth;
 mod error;
 mod files;
+mod frames;
 mod kafka;
 mod openapi;
 mod projection;
 mod routes;
+mod storage;
 
 use std::{net::SocketAddr, sync::Arc};
 
@@ -24,6 +26,7 @@ pub struct AppState {
     pub dev_endpoints: bool,
     pub auth: Arc<auth::AuthConfig>,
     pub files: files::FileDirs,
+    pub storage: storage::Storage,
 }
 
 fn env(key: &str, default: &str) -> String {
@@ -51,6 +54,7 @@ async fn main() -> anyhow::Result<()> {
     let auth = Arc::new(auth::AuthConfig::from_env()?);
     auth::bootstrap(&db).await?;
 
+    let storage = storage::Storage::from_env().await?;
     let producer = kafka::Producer::new(&brokers)?;
     let (live, _) = broadcast::channel(1024);
 
@@ -62,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
     let consumer = kafka::consumer(
         &brokers,
         "api-projection",
-        &[topics::DETECTIONS, topics::OBJECT_EVENTS],
+        &[topics::DETECTIONS, topics::OBJECT_EVENTS, topics::FRAMES, topics::FRAMES_ANALYZED],
     )?;
     tokio::spawn(projection.run(consumer));
 
@@ -73,6 +77,7 @@ async fn main() -> anyhow::Result<()> {
         dev_endpoints: env("DEV_ENDPOINTS", "1") != "0",
         auth,
         files: files::FileDirs::from_env(),
+        storage,
     };
     let app = routes::router(state)
         .layer(CorsLayer::permissive())

@@ -34,10 +34,19 @@
 ## Запуск
 
 ```bash
-docker compose up -d redpanda topics console postgres   # Kafka :19092, Kafka UI :8081, Postgres :5432
-cd backend && SEED_DEMO_USERS=1 cargo run -p api       # API :8080, демо-пользователи
-cd web && npm i && npm start                            # UI :4200 (прокси /api -> :8080)
+docker compose up -d redpanda topics console postgres s3   # Kafka :19092, Kafka UI :8081, Postgres :5432, S3 :8333
+cd backend && SEED_DEMO_USERS=1 S3_ENDPOINT=http://localhost:8333 S3_ACCESS_KEY=mgts S3_SECRET_KEY=mgts-secret \
+  MEDIA_ROOT="$PWD/../data/Датасет-ДСС" cargo run -p api      # API :8080, демо-пользователи, бакет создаётся сам
+cd ml && .venv/bin/python consumer.py                         # ML: слушает frames.ingested, отвечает frames.analyzed
+cd web && npm i && npm start                                  # UI :4200 (прокси /api -> :8080)
 ```
+
+**Проверить фото** (`/check`, роли dispatcher, technician, admin): перетащить снимки → файл уходит в S3, событие в Kafka,
+вердикт модели с рекомендацией бригаде приходит на страницу примерно через 2 с. Весь датасет тем же путём:
+`cd ml && .venv/bin/python upload.py ../data/Датасет-ДСС --labels ../data/Датасет-ДСС/labels.csv --id-col object_id`.
+
+Фото лежат в S3 (локально SeaweedFS, в проде любой S3), в базе и Kafka только ссылки. Без `S3_ENDPOINT` API кладёт
+загрузки в папку `UPLOAD_DIR` (`../data/uploads`). Фото датасета отдаются с диска из `MEDIA_ROOT`.
 
 Всё в контейнерах: `docker compose up -d --build`.
 

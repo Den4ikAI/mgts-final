@@ -64,9 +64,9 @@ impl Role {
         match (self, p) {
             (Admin, _) => true,
             (_, ObjectsRead) => true,
-            (Dispatcher, Review | StatsRead | WorkOrdersManage) => true,
+            (Dispatcher, Review | StatsRead | WorkOrdersManage | FramesUpload) => true,
             (Manager, StatsRead) => true,
-            (Technician, WorkOrdersOwn) => true,
+            (Technician, WorkOrdersOwn | FramesUpload) => true,
             _ => false,
         }
     }
@@ -93,10 +93,12 @@ pub enum Perm {
     UsersManage,
     /// `/api/dev/*` synthetic data.
     DevTools,
+    /// Upload photos for analysis (`POST /api/frames`).
+    FramesUpload,
 }
 
 impl Perm {
-    pub const ALL: [Perm; 7] = [
+    pub const ALL: [Perm; 8] = [
         Perm::ObjectsRead,
         Perm::Review,
         Perm::StatsRead,
@@ -104,6 +106,7 @@ impl Perm {
         Perm::WorkOrdersOwn,
         Perm::UsersManage,
         Perm::DevTools,
+        Perm::FramesUpload,
     ];
 }
 

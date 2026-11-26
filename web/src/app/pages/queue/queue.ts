@@ -66,7 +66,11 @@ export class QueuePage {
 
   constructor() {
     this.reload();
-    this.api.live().pipe(takeUntilDestroyed()).subscribe(() => this.reload());
+    // Object events change the queue; per-photo verdicts (frame_analyzed) arrive via detections anyway.
+    this.api
+      .live()
+      .pipe(takeUntilDestroyed())
+      .subscribe((m) => m.payload.type !== 'frame_analyzed' && this.reload());
   }
 
   reload() {

@@ -15,7 +15,8 @@ use sqlx::PgPool;
 use tokio::sync::broadcast;
 
 use domain::{
-    topics, DetectionCreated, Envelope, ObjectEvent, ObjectStatus, ReviewDecision, Severity,
+    topics, DetectionCreated, Envelope, FrameAnalyzed, FrameIngested, ObjectEvent, ObjectStatus,
+    ReviewDecision, Severity,
 };
 
 use crate::kafka::Producer;
@@ -44,6 +45,8 @@ impl Projection {
             let res = match msg.topic() {
                 topics::DETECTIONS => self.on_detection(body).await,
                 topics::OBJECT_EVENTS => self.on_object_event(body).await,
+                topics::FRAMES => self.on_frame(body).await,
+                topics::FRAMES_ANALYZED => self.on_frame_analyzed(body).await,
                 other => {
                     tracing::debug!("ignoring topic {other}");
                     Ok(())
@@ -129,6 +132,37 @@ impl Projection {
             )
             .await?;
         }
+        Ok(())
+    }
+
+    async fn on_frame(&self, body: &[u8]) -> anyhow::Result<()> {
+        let env: Envelope<FrameIngested> = serde_json::from_slice(body).context("decode frame")?;
+        crate::frames::insert_frame(&self.db, &env.payload).await?;
+        Ok(())
+    }
+
+    /// The model's verdict for an uploaded frame; pushed to live subscribers so
+    /// the upload page updates without polling.
+    async fn on_frame_analyzed(&self, body: &[u8]) -> anyhow::Result<()> {
+        let env: Envelope<FrameAnalyzed> = serde_json::from_slice(body).context("decode frame verdict")?;
+        let a = &env.payload;
+        // Own table, no FK: on a replay the verdict may come before the frame row.
+        sqlx::query(
+            "INSERT INTO frame_verdicts (frame_id, status, result, analyzed_at) VALUES ($1, $2, $3, $4)
+             ON CONFLICT (frame_id) DO UPDATE
+               SET status = EXCLUDED.status, result = EXCLUDED.result, analyzed_at = EXCLUDED.analyzed_at
+               WHERE frame_verdicts.analyzed_at <= EXCLUDED.analyzed_at",
+        )
+        .bind(a.frame_id)
+        .bind(if a.route == "error" { "error" } else { "done" })
+        .bind(serde_json::to_value(a)?)
+        .bind(env.occurred_at)
+        .execute(&self.db)
+        .await?;
+        let mut payload = serde_json::to_value(a)?;
+        payload["type"] = "frame_analyzed".into();
+        let msg = serde_json::json!({ "key": env.key, "payload": payload });
+        let _ = self.live.send(msg.to_string());
         Ok(())
     }
 

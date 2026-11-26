@@ -82,9 +82,10 @@ def questions_hash(tax: dict) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
-def image_bytes(path: pathlib.Path, max_side: int) -> tuple[bytes, str]:
-    """Downscale big photos: fewer tokens, faster upload. Returns (bytes, mime)."""
-    raw = path.read_bytes()
+def image_bytes(path: pathlib.Path, max_side: int, raw: bytes | None = None) -> tuple[bytes, str]:
+    """Downscale big photos: fewer tokens, faster upload. Returns (bytes, mime).
+    `raw` = the file's bytes when they come from S3 rather than disk (`path` then only names it)."""
+    raw = path.read_bytes() if raw is None else raw
     if max_side <= 0:
         return raw, "image/jpeg" if path.suffix.lower() in (".jpg", ".jpeg") else f"image/{path.suffix.lower().lstrip('.')}"
     from PIL import Image, ImageOps
@@ -119,13 +120,13 @@ class Client:
                     {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(data).decode()}"}}]
         return out
 
-    def ask(self, path: pathlib.Path, sha: str) -> tuple[dict, bool, float]:
+    def ask(self, path: pathlib.Path, sha: str, raw: bytes | None = None) -> tuple[dict, bool, float]:
         """Returns (raw response, from_cache, latency_s). Retries 429/5xx/network."""
         cached = self.cache / f"{sha}.json"
         if cached.exists():
             res = json.loads(cached.read_text())
             return res, True, float(res.get("_latency", 0.0))
-        data, mime = image_bytes(path, self.max_side)
+        data, mime = image_bytes(path, self.max_side, raw)
         body = {
             "model": MODEL,
             "state": [

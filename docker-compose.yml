@@ -1,5 +1,5 @@
-# Local stack: Kafka (Redpanda, Kafka API compatible), Kafka UI, Postgres, API.
-#   docker compose up -d redpanda console postgres   # infra only, run api/web locally
+# Local stack: Kafka (Redpanda, Kafka API compatible), Kafka UI, Postgres, S3 (SeaweedFS), API.
+#   docker compose up -d redpanda console postgres s3 topics   # infra only, run api/web locally
 #   docker compose up -d --build                     # everything
 services:
   redpanda:
@@ -24,7 +24,7 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        rpk -X brokers=redpanda:9092 topic create frames.ingested detections.created -p 3 || true
+        rpk -X brokers=redpanda:9092 topic create frames.ingested frames.analyzed detections.created -p 3 || true
         rpk -X brokers=redpanda:9092 topic create object.events -p 6 -c retention.ms=-1 || true
     restart: "no"
 
@@ -48,6 +48,19 @@ services:
       interval: 3s
       retries: 20
 
+  # S3-compatible object storage for uploaded photos (SeaweedFS; any S3 works in prod).
+  s3:
+    image: chrislusf/seaweedfs:3.97
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json -volume.max=0 -master.volumeSizeLimitMB=512
+    ports: ["8333:8333"]
+    volumes:
+      - s3data:/data
+      - ./infra/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9333/cluster/status >/dev/null"]
+      interval: 3s
+      retries: 30
+
   api:
     build: ./backend
     environment:
@@ -64,6 +77,11 @@ services:
       MEDIA_ROOT: /data
       RUNS_DIR: /runs
       TAXONOMY_PATH: /taxonomy.json
+      # Uploaded photos (POST /api/frames). Empty S3_ENDPOINT = local folder UPLOAD_DIR.
+      S3_ENDPOINT: http://s3:8333
+      S3_BUCKET: mgts-frames
+      S3_ACCESS_KEY: mgts
+      S3_SECRET_KEY: mgts-secret
     volumes:
       - ${DATASET_DIR:-./data}:/data:ro
       - ./ml/runs:/runs:ro
@@ -72,6 +90,8 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       topics: { condition: service_completed_successfully }
+      s3: { condition: service_healthy }
 
 volumes:
   pgdata:
+  s3data:

@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 
 interface Taxonomy {
-  classes: Record<string, { label: string; kind: string | null; ok: boolean }>;
+  classes: Record<string, { label: string; kind: string | null; ok: boolean; action?: string }>;
   kind_question?: { labels?: Record<string, string> };
 }
 
@@ -19,6 +19,10 @@ export class TaxonomyService {
   label(key: string | null | undefined): string {
     if (!key) return 'Норма';
     return this.classes()[key]?.label ?? key;
+  }
+  /** What the crew should do, from taxonomy.json `action`. */
+  action(key: string | null | undefined): string {
+    return this.classes()[key ?? 'ok']?.action ?? '';
   }
   kind(key: string | null | undefined): string {
     if (!key) return '—';

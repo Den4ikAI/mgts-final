@@ -2,6 +2,7 @@
   <span class="brand">МГТС · Инфраструктура</span>
   @if (auth.user(); as u) {
     @if (auth.can('review')) { <a routerLink="/queue" routerLinkActive="active">Очередь</a> }
+    @if (auth.can('frames_upload')) { <a routerLink="/check" routerLinkActive="active">Проверить фото</a> }
     <a routerLink="/objects" routerLinkActive="active">Объекты</a>
     @if (auth.can('stats_read')) { <a routerLink="/dashboard" routerLinkActive="active">Сводка</a> }
     @if (auth.can('stats_read')) { <a routerLink="/quality" routerLinkActive="active">Качество</a> }

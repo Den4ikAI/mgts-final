@@ -6,6 +6,7 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: () => inject(AuthService).home() },
   { path: 'login', canActivate: [guestOnly], loadComponent: () => import('./pages/login/login').then((m) => m.LoginPage) },
   { path: 'queue', canActivate: [requirePerm('review')], loadComponent: () => import('./pages/queue/queue').then((m) => m.QueuePage) },
+  { path: 'check', canActivate: [requirePerm('frames_upload')], loadComponent: () => import('./pages/check/check').then((m) => m.CheckPage) },
   { path: 'objects', canActivate: [requirePerm('objects_read')], loadComponent: () => import('./pages/objects/objects').then((m) => m.ObjectsPage) },
   { path: 'dashboard', canActivate: [requirePerm('stats_read')], loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.DashboardPage) },
   { path: 'quality', canActivate: [requirePerm('stats_read')], loadComponent: () => import('./pages/quality/quality').then((m) => m.QualityPage) },

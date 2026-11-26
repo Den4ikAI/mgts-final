@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub mod topics {
-    /// Frames uploaded from vehicles (ingest -> ML). Key: vehicle_id.
+    /// Photos stored in S3, waiting for the model (api -> ML). Key: frame_id.
     pub const FRAMES: &str = "frames.ingested";
+    /// The model's verdict for every frame, including "fine" and "not observed" (ML -> api). Key: frame_id.
+    pub const FRAMES_ANALYZED: &str = "frames.analyzed";
     /// Raw model output (ML -> backend). Key: frame_id.
     pub const DETECTIONS: &str = "detections.created";
     /// Domain event log, the history of every infrastructure object. Key: object_id.
@@ -85,16 +87,52 @@ pub enum RejectReason {
     Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// A photo stored in object storage and waiting for the model.
+/// Uploaded by a person (`source = "upload"`) or, later, by a vehicle camera.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct FrameIngested {
     pub frame_id: Uuid,
-    pub vehicle_id: String,
-    pub pass_id: Uuid,
-    pub captured_at: DateTime<Utc>,
-    pub position: GeoPoint,
-    /// Vehicle heading, degrees from north.
-    pub heading: f32,
+    /// upload | vehicle | dataset
+    pub source: String,
+    /// Where the bytes are: `s3://bucket/key` or `file:///abs/path`.
     pub image_uri: String,
+    /// Same photo through the API (auth required): `/api/media/store/<key>`.
+    pub media_uri: String,
+    pub sha256: String,
+    pub content_type: String,
+    pub size_bytes: u64,
+    pub file_name: Option<String>,
+    pub uploaded_by: Option<String>,
+    /// Registry object the photo is about, if the uploader knows it.
+    pub object_id: Option<String>,
+    pub position: Option<GeoPoint>,
+    pub captured_at: Option<DateTime<Utc>>,
+    pub vehicle_id: Option<String>,
+    /// Vehicle heading, degrees from north.
+    pub heading: Option<f32>,
+}
+
+/// The model's verdict for one frame. Published for every frame, so an upload
+/// always gets an answer, even "fine" or "nothing to assess".
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct FrameAnalyzed {
+    pub frame_id: Uuid,
+    /// not_observed | auto_ok | review | critical | error
+    pub route: String,
+    pub object_kind: Option<ObjectKind>,
+    /// Taxonomy class key; `None` = looks fine.
+    pub defect_type: Option<String>,
+    pub severity: Option<Severity>,
+    pub confidence: f32,
+    pub rationale: Option<String>,
+    /// Set when a detection was also published to `detections.created`.
+    pub detection_id: Option<Uuid>,
+    pub object_id: Option<String>,
+    /// From the request, EXIF GPS or text burned into the photo.
+    pub position: Option<GeoPoint>,
+    pub model: String,
+    pub latency_ms: Option<u32>,
+    pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

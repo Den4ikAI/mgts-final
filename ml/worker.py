@@ -22,9 +22,9 @@ import uuid
 
 import decision as dec
 import labels as lab
+from events import NS, detection_payload, envelope
 
 IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
-NS = uuid.UUID("6f1c2a52-3a8e-4f39-9d0a-6d2b1d0b7a11")  # namespace for deterministic ids
 
 
 def sha256(p: pathlib.Path) -> str:
@@ -36,16 +36,6 @@ def num(v: str | None) -> float | None:
         return float(str(v).replace(",", ".")) if v not in (None, "") else None
     except ValueError:
         return None
-
-
-def envelope(key: str, payload: dict) -> bytes:
-    return json.dumps({
-        "event_id": str(uuid.uuid4()),
-        "occurred_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "key": key,
-        "source": "ml.decision-worker",
-        "payload": payload,
-    }, ensure_ascii=False).encode()
 
 
 def main() -> None:
@@ -122,20 +112,10 @@ def main() -> None:
                 if producer and rec["route"] in ("auto_ok", "review", "critical"):
                     frame_id = uuid.uuid5(NS, "frame:" + rec["sha256"])
                     det_id = uuid.uuid5(NS, f"det:{rec['sha256']}:{client.qhash}:{json.dumps(tax['thresholds'], sort_keys=True)}")
-                    conf = rec["probs"].get(rec["defect_type"], rec["top_p"]) if rec["defect_type"] else rec["top_p"]
-                    payload = {
-                        "detection_id": str(det_id),
-                        "frame_id": str(frame_id),
-                        "object_id": rec["object_id"],
-                        "object_kind": rec["kind"] if rec["kind"] in kinds else next(iter(kinds)),
-                        "position": {"lat": lat, "lon": lon} if lat is not None and lon is not None else None,
-                        "defect_type": rec["defect_type"],
-                        "severity": rec["severity"],
-                        "confidence": round(float(conf), 4),
-                        "bbox": {"x": 0.0, "y": 0.0, "w": 1.0, "h": 1.0},
-                        "crop_uri": rec["media_uri"],
-                        "rationale": rec["rationale"],
-                    }
+                    payload = detection_payload(
+                        rec, detection_id=str(det_id), frame_id=str(frame_id), object_id=rec["object_id"], kinds=kinds,
+                        position={"lat": lat, "lon": lon} if lat is not None and lon is not None else None,
+                        crop_uri=rec["media_uri"])
                     producer.produce("detections.created", key=str(frame_id), value=envelope(str(frame_id), payload))
                     producer.poll(0)
                     published += 1

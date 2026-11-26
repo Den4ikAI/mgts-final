@@ -9,6 +9,9 @@
 | `worker.py` | прогон папки → `runs/<id>/predictions.jsonl` и Kafka `detections.created` |
 | `evaluate.py` | отчёт против разметки → `runs/<id>/report.{json,md}`, страница «Качество» в UI |
 | `labels.py` | чтение CSV/XLSX; `python labels.py table.xlsx` показывает колонки и значения |
+| `consumer.py` | потоковый режим: Kafka `frames.ingested` → фото из S3 → модель → `frames.analyzed` + `detections.created`; GPS из EXIF |
+| `upload.py` | грузит папку через `POST /api/frames`, как человек на странице «Проверить фото» |
+| `events.py` | сборка событий Kafka, общая для `worker.py` и `consumer.py` |
 | `prepare_dss.py` | сводит 6 таблиц «Датасет-ДСС» в один `labels.csv`: путь, object_id, тип (ТКШ/РЩ), класс |
 | `smoke_decision.py` | один запрос: проверить ключ и сеть |
 

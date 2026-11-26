@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "mgts",
+      "credentials": [{ "accessKey": "mgts", "secretKey": "mgts-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

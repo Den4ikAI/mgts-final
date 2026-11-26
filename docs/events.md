@@ -10,9 +10,30 @@
 
 | Топик | Кто пишет | Ключ | payload |
 |---|---|---|---|
-| `frames.ingested` | загрузчик с машин | `vehicle_id` | `FrameIngested` |
-| `detections.created` | ML-воркер | `frame_id` | `DetectionCreated` |
+| `frames.ingested` | api (`POST /api/frames`), позже — машины | `frame_id` | `FrameIngested` |
+| `frames.analyzed` | ML (`ml/consumer.py`) | `frame_id` | `FrameAnalyzed` |
+| `detections.created` | ML (`consumer.py`, `worker.py`) | `frame_id` | `DetectionCreated` |
 | `object.events` | api | `object_id` | `ObjectEvent` (тег `type`) |
+
+## Путь загруженного фото
+
+```
+POST /api/frames ─► S3 (frames/YYYY/MM/DD/<sha256>.jpg) ─► frames.ingested ─► ml/consumer.py
+   ─► Gemini Decision ─► frames.analyzed (всегда) + detections.created (норма/дефект)
+   ─► проекция: таблицы frames, detections, objects ─► SSE `frame_analyzed` ─► страница «Проверить фото»
+```
+
+Около 2 с от загрузки до вердикта. Повторная загрузка того же фото не вызывает модель: ответы кэшируются по sha256.
+
+## `FrameIngested` (фото в хранилище)
+
+`frame_id`, `source` (upload | vehicle | dataset), `image_uri` (`s3://bucket/key` или `file://…`), `media_uri` (`/api/media/store/<key>`),
+`sha256`, `content_type`, `size_bytes`, `file_name`, `uploaded_by`, `object_id?`, `position?`, `captured_at?`, `vehicle_id?`, `heading?`.
+
+## `FrameAnalyzed` (вердикт по каждому кадру)
+
+`frame_id`, `route` (`auto_ok` | `review` | `critical` | `not_observed` | `error`), `object_kind?`, `defect_type?`, `severity?`,
+`confidence`, `rationale?`, `detection_id?` (если ушёл `DetectionCreated`), `object_id?`, `position?` (из запроса или EXIF), `model`, `latency_ms?`, `error?`.
 
 ## `DetectionCreated` (выход ML)
 
@@ -21,7 +42,7 @@
 | `detection_id` | uuid | идемпотентность |
 | `frame_id` | uuid | |
 | `object_id` | string \| null | id из реестра МГТС, если сопоставлен |
-| `object_kind` | `cable_well` \| `dual_pole` | |
+| `object_kind` | `tksh` \| `rsh` \| `cable_well` \| `dual_pole` | |
 | `position` | `{lat, lon}` \| null | |
 | `defect_type` | string \| null | `null` = объект виден, дефекта нет |
 | `severity` | `low` \| `medium` \| `high` \| `critical` \| null | |

@@ -71,7 +71,7 @@ fn content_type(p: &Path) -> &'static str {
     }
 }
 
-/// Фото из датасета (`MEDIA_ROOT`). Путь — как в `crop_uri` после `/api/media/`.
+/// Фото: `store/<key>` — загруженные (S3), остальное — датасет (`MEDIA_ROOT`). Путь — как в `crop_uri`/`media_uri` после `/api/media/`.
 #[utoipa::path(get, path = "/api/media/{path}", tag = "files", params(("path" = String, Path, example = "МП. ТКШ/26224137.jpg")), security(("bearer" = [])),
     responses((status = 200, description = "Картинка", content_type = "image/*", body = Vec<u8>),
               (status = 400, body = ErrorBody), (status = 401, body = ErrorBody), (status = 404, body = ErrorBody)))]
@@ -81,6 +81,19 @@ async fn media(
     UrlPath(rel): UrlPath<String>,
 ) -> Result<Response, ApiError> {
     user.require(Perm::ObjectsRead)?;
+    // Uploaded photos live in object storage under `store/<key>`.
+    if let Some(key) = rel.strip_prefix("store/") {
+        if !crate::storage::valid_key(key) {
+            return Err(ApiError::bad_request("bad path"));
+        }
+        let bytes = s.storage.get(key).await.map_err(ApiError::Internal)?
+            .ok_or_else(|| ApiError::not_found("no such file"))?;
+        let mut res = Body::from(bytes).into_response();
+        let h = res.headers_mut();
+        h.insert(header::CONTENT_TYPE, HeaderValue::from_static(content_type(Path::new(key))));
+        h.insert(header::CACHE_CONTROL, HeaderValue::from_static("private, max-age=86400, immutable"));
+        return Ok(res);
+    }
     let root = s.files.media_root.as_ref().ok_or_else(|| ApiError::not_found("MEDIA_ROOT not configured"))?;
     let path = safe_join(root, &rel).ok_or_else(|| ApiError::bad_request("bad path"))?;
     // Symlinks inside the dataset must not lead outside it either.

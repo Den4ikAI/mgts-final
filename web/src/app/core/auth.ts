@@ -11,7 +11,8 @@ export type Perm =
   | 'work_orders_manage'
   | 'work_orders_own'
   | 'users_manage'
-  | 'dev_tools';
+  | 'dev_tools'
+  | 'frames_upload';
 
 export interface User {
   id: string;
