@@ -7,7 +7,7 @@ web/.angular/
 .DS_Store
 .idea/
 .vscode/
-data/
+/data/
 openrouter_key.txt
 __pycache__/
 ml/.venv/

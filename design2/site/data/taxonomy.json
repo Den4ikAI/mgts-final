@@ -1,0 +1,165 @@
+{
+  "_comment": "Копия ml/taxonomy.json (вопросы модели идут с сайта ровно такими же) + блок ui и рекомендации. Правится вместе с ml/taxonomy.json.",
+  "ui": {
+    "deadlines": {
+      "critical": "немедленно",
+      "high": "24 часа",
+      "medium": "3 суток",
+      "low": "плановое ТО"
+    },
+    "kinds": {
+      "tksh": "ТКШ",
+      "rsh": "РЩ"
+    },
+    "kinds_long": {
+      "tksh": "Телекоммуникационный климатический шкаф",
+      "rsh": "Распределительный щит"
+    },
+    "reject_reasons": {
+      "shadow": "Блик, тень",
+      "puddle": "Грязь",
+      "foreign_owner": "Чужой шкаф",
+      "bad_frame": "Плохой кадр",
+      "not_a_defect": "Не дефект",
+      "other": "Другое"
+    },
+    "severities": {
+      "low": "Низкая",
+      "medium": "Средняя",
+      "high": "Высокая",
+      "critical": "Аварийная"
+    }
+  },
+  "context": "Inspection photo of MGTS outdoor telecom equipment in Moscow, usually mounted on a pole. A telecommunication climate cabinet (ТКШ) is a large metal cabinet with a climate compartment (an air-conditioning block with louvers) attached to its side, top or bottom. A distribution board (РЩ) is a smaller flat electrical box with one door. Inspectors look for paint damage and corrosion, mechanical damage of the housing, and mounting failures. Assess the main cabinet or board in the photo.",
+  "object_question": {
+    "instructions": "Is a telecom equipment cabinet or an electrical distribution board visible and assessable in the photo (even if it is damaged, opened, hanging or fallen)?",
+    "true": "Such equipment is visible and its condition can be assessed.",
+    "false": "No such equipment, or the photo is too blurry, dark or occluded to assess it."
+  },
+  "kind_question": {
+    "instructions": "Which kind of equipment is the main one in the photo?",
+    "classes": {
+      "tksh": "Telecommunication climate cabinet: a large metal cabinet, often with ventilation louvers, a climate (air-conditioning) unit or a separate climate compartment.",
+      "rsh": "Distribution board: a smaller flat electrical box with a hinged door, holding breakers, meters and power cables."
+    },
+    "labels": {
+      "tksh": "ТКШ",
+      "rsh": "РЩ"
+    }
+  },
+  "defect_question": {
+    "instructions": "Inspect the main cabinet or board closely: housing walls, door, roof, bottom, climate compartment and mounting brackets. What is its condition? If there are several problems, choose the most serious one: mounting failure > mechanical damage > paint damage."
+  },
+  "classes": {
+    "none": {
+      "label": "Объекта нет",
+      "kind": null,
+      "ok": true,
+      "description": "There is no telecom cabinet or distribution board to assess in the photo.",
+      "aliases": [],
+      "severity": null,
+      "recommendation": "Оборудование не видно на кадре. Переснять при следующем осмотре."
+    },
+    "ok": {
+      "label": "Удовлетворительно",
+      "kind": null,
+      "ok": true,
+      "description": "Equipment is in working order: all panels are flat and flush, edges are straight, the climate compartment sits square and aligned with the cabinet, the door is closed flush, it is firmly mounted and the paint is mostly intact. Normal wear is NOT a defect: dirt, dust, stickers, labels, small scratches, slight fading, cables around it.",
+      "aliases": [
+        "удовлетворительно",
+        "удовлетврорительно",
+        "норма",
+        "дефекты лкп и мп отсутствуют"
+      ],
+      "severity": null,
+      "recommendation": "Действий не требуется."
+    },
+    "paint": {
+      "label": "Повреждение ЛКП",
+      "kind": null,
+      "ok": false,
+      "description": "Paint coating damage: clearly visible rust spots or streaks, corrosion (surface, extensive or through), peeling or missing paint with bare metal, graffiti; the housing shape is intact and the equipment is firmly mounted.",
+      "aliases": [
+        "повреждение лкп",
+        "коррозия",
+        "лкп"
+      ],
+      "severity": "low",
+      "recommendation": "Зачистить коррозию и восстановить покрытие ({kind}). Срок: {deadline}."
+    },
+    "deformation": {
+      "label": "Механическое повреждение",
+      "kind": null,
+      "ok": false,
+      "description": "Mechanical damage: housing, door, roof, bottom or climate compartment is dented, bent, crushed, torn or broken; the climate compartment is skewed, shifted, sagging or misaligned relative to the cabinet; panels are not flush or have gaps; the door is ajar, bent or missing; internals are exposed. A moderate deformation also counts.",
+      "aliases": [
+        "деформация",
+        "деформация с повреждением лкп",
+        "деформация с повреждение лкп",
+        "деформация без повреждения лкп",
+        "мп"
+      ],
+      "severity": "medium",
+      "recommendation": "Выправить или заменить повреждённые элементы корпуса, проверить герметичность. Срок: {deadline}."
+    },
+    "mount_failure": {
+      "label": "Нарушение крепления",
+      "kind": null,
+      "ok": false,
+      "description": "Mounting failure: the cabinet or board is torn off its brackets, tilted away from the pole, hanging on its cables or fallen to the ground.",
+      "aliases": [
+        "нарушение узлов крепления",
+        "нарушение целостности узлов крепления ткш",
+        "отрыв узлов крепления"
+      ],
+      "severity": "critical",
+      "recommendation": "Закрепить оборудование на опоре, при угрозе падения оградить зону. Срок: {deadline}."
+    }
+  },
+  "severity_question": {
+    "instructions": "How urgently does this equipment need a repair crew?",
+    "levels": [
+      {
+        "severity": "low",
+        "description": "No defects."
+      },
+      {
+        "severity": "low",
+        "description": "Cosmetic: surface rust, paint or graffiti; planned maintenance is enough."
+      },
+      {
+        "severity": "medium",
+        "description": "Needs repair: deep or through corrosion, dented or broken housing, damaged or missing door; water and dust can get inside."
+      },
+      {
+        "severity": "critical",
+        "description": "Emergency: equipment torn off, hanging on cables or fallen, or live electrical parts exposed to passers-by."
+      }
+    ]
+  },
+  "thresholds": {
+    "_comment": "object_min: если модель склоняется к норме, а объект виден хуже порога — кадр 'не наблюдается' (дефекты этот порог не гасит). auto_ok: норма увереннее — подтверждается без человека. critical_prob: P(последний уровень опасности) выше — тревога в обход очереди. high_score: ожидаемый уровень опасности выше — severity high. check_max: если любая да/нет-проверка дефекта выше — норма не закрывается автоматически.",
+    "object_min": 0.75,
+    "auto_ok": 0.6,
+    "critical_prob": 0.5,
+    "high_score": 2.0,
+    "check_max": 0.6
+  },
+  "checks": {
+    "paint": {
+      "instructions": "Look at the paint of the main cabinet or board. Is there visible rust, corrosion, peeling or missing paint, or graffiti?",
+      "true": "Yes, rust, corrosion, peeling paint or graffiti is visible.",
+      "false": "No, the paint looks intact apart from dirt or stickers."
+    },
+    "deformation": {
+      "instructions": "Look at the shape of the main cabinet or board: walls, door, roof, bottom and climate compartment. Is anything dented, bent, broken, skewed, shifted, misaligned, not flush, or is the door ajar or missing?",
+      "true": "Yes, some part is deformed, broken, misaligned or open.",
+      "false": "No, all panels are flat, aligned and closed."
+    },
+    "mount_failure": {
+      "instructions": "Look at how the main cabinet or board is attached. Is it torn off its brackets, tilted away from the pole, hanging on cables or lying on the ground?",
+      "true": "Yes, the mounting has failed.",
+      "false": "No, it is firmly attached in its normal position."
+    }
+  }
+}

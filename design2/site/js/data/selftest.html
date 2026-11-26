@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data layer selftest</title>
+  <style>
+    body { font: 13px/1.5 ui-monospace, monospace; margin: 16px; background: Canvas; color: CanvasText; }
+    .pass { color: green; } .fail { color: crimson; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Попутно · data layer selftest</h1>
+  <p>Без UI: загружает демо-источник, прогоняет нормализацию, селекторы и импорт. Результат в <code>window.__SELFTEST__</code>.</p>
+  <pre id="out">running…</pre>
+  <script type="module" src="./selftest.js"></script>
+</body>
+</html>
