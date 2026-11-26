@@ -168,6 +168,9 @@ pub struct FrameAnalyzed {
     /// The model's most likely class (also "ok" / "none") and its probability.
     pub top_class: Option<String>,
     pub top_p: Option<f32>,
+    /// Probability of every taxonomy class.
+    #[schema(value_type = Option<Object>)]
+    pub probs: Option<std::collections::HashMap<String, f32>>,
     pub rationale: Option<String>,
     /// Set when a detection was also published to `detections.created`.
     pub detection_id: Option<Uuid>,

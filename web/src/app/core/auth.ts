@@ -43,8 +43,8 @@ export const ROLE_LABEL: Record<Role, string> = {
 const HOME: Record<Role, string> = {
   admin: '/queue',
   dispatcher: '/queue',
-  manager: '/dashboard',
-  technician: '/objects',
+  manager: '/',
+  technician: '/orders',
 };
 
 /**

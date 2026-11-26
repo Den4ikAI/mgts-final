@@ -27,7 +27,9 @@
       "ok": true,
       "description": "There is no telecom cabinet or distribution board to assess in the photo.",
       "aliases": [],
-      "action": "Переснять: объект не попал в кадр или не различим"
+      "action": "Переснять: объект не попал в кадр или не различим",
+      "severity": null,
+      "recommendation": "Оборудование не видно на кадре. Переснять при следующем осмотре."
     },
     "ok": {
       "label": "Удовлетворительно",
@@ -40,7 +42,9 @@
         "норма",
         "дефекты лкп и мп отсутствуют"
       ],
-      "action": "Объект в норме, выезд не нужен"
+      "action": "Объект в норме, выезд не нужен",
+      "severity": null,
+      "recommendation": "Действий не требуется."
     },
     "paint": {
       "label": "Повреждение ЛКП",
@@ -52,7 +56,9 @@
         "коррозия",
         "лкп"
       ],
-      "action": "Плановое ТО: зачистить коррозию и восстановить ЛКП"
+      "action": "Плановое ТО: зачистить коррозию и восстановить ЛКП",
+      "severity": "low",
+      "recommendation": "Зачистить коррозию и восстановить покрытие ({kind}). Срок: {deadline}."
     },
     "deformation": {
       "label": "Механическое повреждение",
@@ -66,7 +72,9 @@
         "деформация без повреждения лкп",
         "мп"
       ],
-      "action": "Ремонт: выправить или заменить корпус, дверь, климатический отсек"
+      "action": "Ремонт: выправить или заменить корпус, дверь, климатический отсек",
+      "severity": "medium",
+      "recommendation": "Выправить или заменить повреждённые элементы корпуса, проверить герметичность. Срок: {deadline}."
     },
     "mount_failure": {
       "label": "Нарушение крепления",
@@ -78,7 +86,9 @@
         "нарушение целостности узлов крепления ткш",
         "отрыв узлов крепления"
       ],
-      "action": "Срочный выезд бригады: восстановить крепление, оградить место"
+      "action": "Срочный выезд бригады: восстановить крепление, оградить место",
+      "severity": "critical",
+      "recommendation": "Закрепить оборудование на опоре, при угрозе падения оградить зону. Срок: {deadline}."
     }
   },
   "severity_question": {
@@ -125,6 +135,36 @@
       "instructions": "Look at how the main cabinet or board is attached. Is it torn off its brackets, tilted away from the pole, hanging on cables or lying on the ground?",
       "true": "Yes, the mounting has failed.",
       "false": "No, it is firmly attached in its normal position."
+    }
+  },
+  "ui": {
+    "deadlines": {
+      "critical": "немедленно",
+      "high": "24 часа",
+      "medium": "3 суток",
+      "low": "плановое ТО"
+    },
+    "kinds": {
+      "tksh": "ТКШ",
+      "rsh": "РЩ"
+    },
+    "kinds_long": {
+      "tksh": "Телекоммуникационный климатический шкаф",
+      "rsh": "Распределительный щит"
+    },
+    "reject_reasons": {
+      "shadow": "Блик, тень",
+      "puddle": "Грязь",
+      "foreign_owner": "Чужой шкаф",
+      "bad_frame": "Плохой кадр",
+      "not_a_defect": "Не дефект",
+      "other": "Другое"
+    },
+    "severities": {
+      "low": "Низкая",
+      "medium": "Средняя",
+      "high": "Высокая",
+      "critical": "Аварийная"
     }
   }
 }

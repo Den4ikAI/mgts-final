@@ -101,7 +101,7 @@ def main() -> None:
         frame_id = f["frame_id"]
         t0 = time.monotonic()
         out = {"frame_id": frame_id, "route": "error", "object_kind": None, "defect_type": None, "severity": None,
-               "confidence": 0.0, "top_class": None, "top_p": None, "rationale": None, "detection_id": None, "object_id": f.get("object_id"),
+               "confidence": 0.0, "top_class": None, "top_p": None, "probs": None, "rationale": None, "detection_id": None, "object_id": f.get("object_id"),
                "position": f.get("position"), "model": dec.MODEL, "latency_ms": None, "error": None}
         try:
             raw = fetch(f["image_uri"], s3)
@@ -114,6 +114,7 @@ def main() -> None:
                        defect_type=rec["defect_type"], severity=rec["severity"],
                        confidence=round(float(rec["probs"].get(rec["defect_type"], rec["top_p"]) if rec["defect_type"] else rec["top_p"]), 4),
                        top_class=rec["top"], top_p=round(float(rec["top_p"]), 4),
+                       probs={k: round(float(v), 4) for k, v in rec["probs"].items()},
                        rationale=rec["rationale"], object_id=object_id, position=position)
             if rec["route"] in ("auto_ok", "review", "critical"):
                 det_id = str(uuid.uuid5(NS, f"det:{frame_id}:{client.qhash}"))

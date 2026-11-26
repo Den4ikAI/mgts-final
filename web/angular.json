@@ -27,6 +27,10 @@
               }
             ],
             "styles": [
+              "src/styles/brand/fonts/fonts.css",
+              "src/styles/brand/tokens.css",
+              "src/styles/brand/components.css",
+              "src/styles/poputno.css",
               "src/styles.scss"
             ]
           },
@@ -35,13 +39,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1.5MB",
+                  "maximumError": "3MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "16kB",
+                  "maximumError": "32kB"
                 }
               ],
               "outputHashing": "all"
@@ -84,6 +88,10 @@
               }
             ],
             "styles": [
+              "src/styles/brand/fonts/fonts.css",
+              "src/styles/brand/tokens.css",
+              "src/styles/brand/components.css",
+              "src/styles/poputno.css",
               "src/styles.scss"
             ]
           }

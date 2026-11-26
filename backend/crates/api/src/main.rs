@@ -80,7 +80,17 @@ async fn main() -> anyhow::Result<()> {
         files: files::FileDirs::from_env(),
         storage,
     };
-    let app = routes::router(state)
+    let mut app = routes::router(state);
+    // The Angular UI from the same origin as /api: no CORS, the refresh cookie just works.
+    let static_dir = std::path::PathBuf::from(env("STATIC_DIR", "../web/dist/web/browser"));
+    if static_dir.join("index.html").exists() {
+        tracing::info!("serving UI from {}", static_dir.display());
+        let index = tower_http::services::ServeFile::new(static_dir.join("index.html"));
+        app = app.fallback_service(tower_http::services::ServeDir::new(&static_dir).fallback(index));
+    } else {
+        tracing::warn!("STATIC_DIR {} has no index.html: UI not served (run `ng build` in web/)", static_dir.display());
+    }
+    let app = app
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http());
 

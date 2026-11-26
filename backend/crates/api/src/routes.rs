@@ -95,7 +95,28 @@ pub struct DetectionRow {
     /// pending | confirmed | rejected | need_recapture | auto
     review_state: String,
     created_at: DateTime<Utc>,
+    /// Главный класс модели по кадру и его вероятность (из frames.analyzed)
+    top_class: Option<String>,
+    top_p: Option<f64>,
+    /// Вероятности всех классов
+    #[schema(value_type = Option<Object>)]
+    probs: Option<Value>,
+    /// Разметка организаторов, если кадр пришёл из датасета
+    #[schema(value_type = Option<domain::GroundTruth>)]
+    truth: Option<Value>,
+    file_name: Option<String>,
+    /// Все шкафы/щиты в кадре с рамками (frames.objects)
+    #[schema(value_type = Option<Vec<domain::DetectedObject>>)]
+    objects: Option<Value>,
 }
+
+/// Detection + what is known about its frame: verdict details, annotation, boxes.
+const DETECTION_SELECT: &str = "SELECT d.*, v.result->>'top_class' AS top_class, (v.result->>'top_p')::float8 AS top_p,
+        v.result->'probs' AS probs, f.truth, f.file_name, o.objects
+    FROM detections d
+    LEFT JOIN frames f ON f.id = d.frame_id
+    LEFT JOIN frame_verdicts v ON v.frame_id = d.frame_id
+    LEFT JOIN frame_objects o ON o.frame_id = d.frame_id";
 
 /// Событие из истории объекта (топик `object.events`).
 #[derive(Serialize, sqlx::FromRow, ToSchema)]
@@ -164,7 +185,7 @@ async fn get_object(
         .await?
         .ok_or_else(|| ApiError::not_found(format!("object {id} not found")))?;
     let detections = sqlx::query_as::<_, DetectionRow>(
-        "SELECT * FROM detections WHERE object_id = $1 ORDER BY created_at DESC LIMIT 50",
+        &format!("{DETECTION_SELECT} WHERE d.object_id = $1 ORDER BY d.created_at DESC LIMIT 50"),
     )
     .bind(&id)
     .fetch_all(&s.db)
@@ -199,11 +220,11 @@ async fn object_history(
 async fn review_queue(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<DetectionRow>> {
     user.require(Perm::ObjectsRead)?;
     let rows = sqlx::query_as::<_, DetectionRow>(
-        "SELECT * FROM detections WHERE review_state = 'pending'
-         ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1
+        &format!("{DETECTION_SELECT} WHERE d.review_state = 'pending'
+         ORDER BY CASE d.severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1
                                 WHEN 'medium' THEN 2 ELSE 3 END,
-                  created_at
-         LIMIT 500",
+                  d.created_at
+         LIMIT 500"),
     )
     .fetch_all(&s.db)
     .await?;

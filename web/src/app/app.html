@@ -1,14 +1,132 @@
-<nav>
-  <span class="brand">МГТС · Инфраструктура</span>
-  @if (auth.user(); as u) {
-    @if (auth.can('review')) { <a routerLink="/queue" routerLinkActive="active">Очередь</a> }
-    @if (auth.can('frames_upload')) { <a routerLink="/check" routerLinkActive="active">Проверить фото</a> }
-    <a routerLink="/objects" routerLinkActive="active">Объекты</a>
-    @if (auth.can('stats_read')) { <a routerLink="/dashboard" routerLinkActive="active">Сводка</a> }
-    @if (auth.can('stats_read')) { <a routerLink="/quality" routerLinkActive="active">Качество</a> }
-    @if (auth.can('users_manage')) { <a routerLink="/users" routerLinkActive="active">Пользователи</a> }
-    <span class="who">{{ u.display_name }} · {{ roleLabel[u.role] }}</span>
-    <button class="mg-btn" (click)="auth.logout()">Выйти</button>
+@if (bare() || !auth.user()) {
+  <router-outlet />
+} @else {
+<div id="app" class="ux-app">
+  <a class="ux-skip" href="#view">К содержимому</a>
+  <aside class="ux-side" id="side" aria-label="Меню">
+    <div class="ux-side__brand">
+      <a routerLink="/" class="ux-logo" aria-label="Попутно, на главную">
+        @if (logo()) { <span [innerHTML]="logo()"></span> } @else { <pp-mark [size]="28" /><span class="ux-logo__word">попутно</span> }
+      </a>
+    </div>
+    <nav class="ux-nav">
+      <ul id="nav">
+        @for (n of navWithSep(); track $index) {
+          @if (isNav(n)) {
+            <li>
+              <a class="ux-nav__item" [class.is-active]="navActive() === n.name" [routerLink]="n.path" [attr.aria-current]="navActive() === n.name ? 'page' : null" (click)="drawer.set(false)">
+                <pp-icon [name]="n.icon" /><span class="ux-nav__label">{{ n.label }}</span>
+                @if (n.count && counts()[n.count]) {
+                  <span class="ux-nav__count pp-mono" [class.is-hot]="n.name === 'queue' && hot()">{{ counts()[n.count] }}</span>
+                }
+              </a>
+            </li>
+          } @else {
+            <li class="ux-nav__sep" role="separator"></li>
+          }
+        }
+      </ul>
+    </nav>
+    <div class="ux-side__foot">
+      @if (auth.user(); as u) {
+        <div class="ux-role">
+          <span class="pp-micro pp-muted">{{ roleLabel[u.role] }}</span>
+          <span class="pp-body">{{ u.display_name }}</span>
+        </div>
+      }
+      <div class="ux-side__row">
+        <span class="ux-chip ux-chip--api" title="Данные из API: Kafka, Postgres, S3"><span class="ux-chip__dot"></span>API</span>
+        <button class="pp-btn pp-btn--ghost pp-btn--icon pp-btn--sm" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'" [title]="(theme() === 'dark' ? 'Светлая тема' : 'Тёмная тема') + ' (T)'">
+          <pp-icon [name]="theme() === 'dark' ? 'sun' : 'moon'" />
+        </button>
+        <button class="pp-btn pp-btn--ghost pp-btn--icon pp-btn--sm" (click)="shell.helpOpen.set(true)" aria-label="Горячие клавиши" title="Горячие клавиши (?)"><span class="ux-q">?</span></button>
+        <button class="pp-btn pp-btn--ghost pp-btn--icon pp-btn--sm" (click)="logout()" aria-label="Выйти" title="Выйти"><pp-icon name="arrow-right" /></button>
+      </div>
+    </div>
+  </aside>
+  @if (drawer()) { <div class="ux-scrim" (click)="drawer.set(false)"></div> }
+  <div class="ux-main">
+    <header class="ux-top">
+      <button class="pp-btn pp-btn--ghost pp-btn--icon ux-top__menu" (click)="drawer.set(true)" aria-label="Меню"><pp-icon name="list" /></button>
+      <a class="ux-top__brand" routerLink="/" aria-label="Попутно"><pp-mark [size]="24" /></a>
+      <h1 class="ux-top__title">{{ shell.title() }}</h1>
+      <div class="ux-search" role="search">
+        <label class="pp-search">
+          <svg class="pp-search__icon" aria-hidden="true"><use href="/brand/icons.svg#i-search" /></svg>
+          <input class="pp-input" id="global-search" type="search" placeholder="Найти объект по ID" autocomplete="off" aria-label="Поиск объекта" aria-controls="search-results"
+            [value]="searchQ()" (input)="searchQ.set($any($event.target).value); searchActive.set(0); searchOpen.set(true)" (keydown)="onSearchKey($event)" (blur)="searchOpen.set(false)" (focus)="searchOpen.set(true)" />
+          <span class="pp-kbd">/</span>
+        </label>
+        @if (searchOpen() && searchQ().trim()) {
+          <ul class="ux-search__results" id="search-results" role="listbox">
+            @for (o of results(); track o.id; let i = $index) {
+              <li role="option" [attr.aria-selected]="i === searchActive()" (mousedown)="$event.preventDefault(); go(o.id)">
+                <span class="pp-id">{{ o.id }}</span><span class="ux-search__addr">{{ o.kindLabel }}</span>
+                <pp-status [status]="o.displayStatus" [label]="o.displayStatusLabel" [sm]="true" />
+              </li>
+            } @empty {
+              <li class="ux-search__none">Ничего не нашли по «{{ searchQ() }}»</li>
+            }
+          </ul>
+        }
+      </div>
+    </header>
+    @if (store.error(); as err) {
+      <div class="ux-banner ux-banner--warn"><pp-icon name="alert" cls="pp-icon--sm" /><span><b>API недоступно:</b> {{ err }}</span>
+        <button class="pp-link" (click)="store.load()">Повторить</button></div>
+    }
+    <main id="view" class="ux-view" tabindex="-1">
+      @if (store.ds()) {
+        <router-outlet />
+      } @else if (!store.error()) {
+        <div class="ux-boot"><pp-loader /></div>
+      }
+    </main>
+  </div>
+  <nav class="ux-tabbar" aria-label="Разделы">
+    <ul>
+      @for (n of nav().slice(0, 4); track n.name) {
+        <li><a class="ux-nav__item" [class.is-active]="navActive() === n.name" [routerLink]="n.path"><pp-icon [name]="n.icon" /><span class="ux-nav__label">{{ n.short || n.label }}</span></a></li>
+      }
+      <li><button class="ux-nav__item" (click)="drawer.set(true)"><pp-icon name="layers" /><span class="ux-nav__label">Ещё</span></button></li>
+    </ul>
+  </nav>
+  <div class="ux-toasts" aria-live="polite">
+    @for (t of shell.toasts(); track t.id) {
+      <div [class]="'pp-toast ux-toast' + (t.tone ? ' pp-toast--' + t.tone : '') + (t.leaving ? ' is-leaving' : '')" [attr.role]="t.tone === 'critical' ? 'alert' : 'status'">
+        <svg class="pp-toast__icon" aria-hidden="true"><use [attr.href]="'/brand/icons.svg#i-' + (t.tone === 'critical' ? 'status-critical' : t.tone === 'ok' ? 'check' : 'alert')" /></svg>
+        <div><div class="pp-toast__title">{{ t.title }}</div>@if (t.text) { <div class="pp-toast__text">{{ t.text }}</div> }</div>
+        <div class="ux-toast__actions">
+          @if (t.link) { <a class="pp-btn pp-btn--ghost pp-btn--sm" [routerLink]="t.link" (click)="shell.close(t.id)">{{ t.actionLabel || 'Открыть' }}</a> }
+          <button class="pp-btn pp-btn--ghost pp-btn--icon pp-btn--sm" aria-label="Закрыть" (click)="shell.close(t.id)"><pp-icon name="close" /></button>
+        </div>
+      </div>
+    }
+  </div>
+  @if (shell.helpOpen()) {
+    <div class="ux-scrim" (click)="shell.helpOpen.set(false)"></div>
+    <div class="ux-dialog" open role="dialog" aria-modal="true" aria-label="Горячие клавиши" style="position: fixed; inset: 0; margin: auto; z-index: 100; height: fit-content" (keydown.escape)="shell.helpOpen.set(false)">
+      <div class="ux-dialog__head"><h2 class="pp-title">Горячие клавиши</h2>
+        <button class="pp-btn pp-btn--ghost pp-btn--icon pp-btn--sm" aria-label="Закрыть" (click)="shell.helpOpen.set(false)"><pp-icon name="close" /></button></div>
+      <div class="ux-keys">
+        <section><h3 class="pp-label pp-muted">Везде</h3><dl>
+          <dt><span class="pp-kbd">/</span></dt><dd>Поиск объекта</dd>
+          <dt><span class="pp-kbd">?</span></dt><dd>Эта подсказка</dd>
+          <dt><span class="pp-kbd">T</span></dt><dd>Сменить тему</dd>
+          @for (n of hotkeyNav(); track n.name) {
+            <dt><span class="pp-kbd">G</span> <span class="pp-kbd">{{ n.key.toUpperCase() }}</span></dt><dd>{{ n.label }}</dd>
+          }
+        </dl></section>
+        <section><h3 class="pp-label pp-muted">Очередь проверки</h3><dl>
+          <dt><span class="pp-kbd">Y</span></dt><dd>Подтвердить</dd>
+          <dt><span class="pp-kbd">N</span></dt><dd>Ложное, затем причина <span class="pp-kbd">1</span>…<span class="pp-kbd">6</span></dd>
+          <dt><span class="pp-kbd">R</span></dt><dd>Нужен кадр</dd>
+          <dt><span class="pp-kbd">J</span> <span class="pp-kbd">K</span></dt><dd>Следующий и предыдущий кадр</dd>
+          <dt><span class="pp-kbd">Enter</span></dt><dd>Открыть объект</dd>
+          <dt><span class="pp-kbd">Esc</span></dt><dd>Отменить выбор причины</dd>
+        </dl><p class="pp-caption pp-muted">В русской раскладке работают Н, Т, К.</p></section>
+      </div>
+    </div>
   }
-</nav>
-<main><router-outlet /></main>
+</div>
+}

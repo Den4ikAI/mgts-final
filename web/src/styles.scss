@@ -1,6 +1,4 @@
-/* Design system: МГТС Инфраструктура (Claude Design), source in /design. */
-@import 'styles/mgts.css';
-@import 'styles/tokens.css';
-
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); }
-h1 { font: 600 22px/28px var(--font-display); }
+/* Brand «Попутно»: tokens + pp-* components (src/styles/brand, copied from design2/brand)
+   and the product layer ux-* (src/styles/poputno.css, ported from design2/site/css/app.css).
+   Angular-only additions go here. */
+app-root { display: contents; }

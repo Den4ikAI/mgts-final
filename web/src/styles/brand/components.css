@@ -1,0 +1,716 @@
+/* ==========================================================================
+   Попутно · components.css · v1.0 · 26.11.2026
+   Базовые компоненты. Только var(--…) из tokens.css, ни одного HEX.
+   Подключение:  fonts/fonts.css → tokens.css → components.css
+   Префикс классов: pp-. Модификаторы через --, части через __ (BEM).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. Основа страницы и типографика
+   -------------------------------------------------------------------------- */
+.pp-page {
+  margin: 0;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  font-feature-settings: "kern";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.pp-page ::selection { background: var(--selection); }
+.pp-page *, .pp-page *::before, .pp-page *::after { box-sizing: border-box; }
+
+/* Unbounded: только 20 px и крупнее */
+.pp-display { font-family: var(--font-display); font-weight: var(--weight-display); font-size: var(--text-display-size); line-height: var(--text-display-lh); letter-spacing: var(--text-display-tr); }
+.pp-h1      { font-family: var(--font-display); font-weight: var(--weight-display); font-size: var(--text-h1-size); line-height: var(--text-h1-lh); letter-spacing: var(--text-h1-tr); }
+.pp-h2      { font-family: var(--font-display); font-weight: var(--weight-display); font-size: var(--text-h2-size); line-height: var(--text-h2-lh); letter-spacing: var(--text-h2-tr); }
+.pp-h3      { font-family: var(--font-sans); font-weight: var(--weight-semibold); font-size: var(--text-h3-size); line-height: var(--text-h3-lh); letter-spacing: var(--text-h3-tr); }
+.pp-title   { font-family: var(--font-sans); font-weight: var(--weight-semibold); font-size: var(--text-title-size); line-height: var(--text-title-lh); letter-spacing: var(--text-title-tr); }
+.pp-body    { font-size: var(--text-body-size); line-height: var(--text-body-lh); }
+.pp-body-sm { font-size: var(--text-body-sm-size); line-height: var(--text-body-sm-lh); }
+.pp-label   { font-size: var(--text-label-size); line-height: var(--text-label-lh); font-weight: var(--weight-semibold); }
+.pp-caption { font-size: var(--text-caption-size); line-height: var(--text-caption-lh); }
+.pp-micro   { font-size: var(--text-micro-size); line-height: var(--text-micro-lh); font-weight: var(--weight-semibold); letter-spacing: var(--text-micro-tr); text-transform: uppercase; }
+.pp-mono    { font-family: var(--font-mono); letter-spacing: var(--tracking-mono); font-variant-numeric: var(--numeric); }
+.pp-num     { font-variant-numeric: var(--numeric); }
+.pp-muted     { color: var(--text-muted); }
+.pp-secondary { color: var(--text-secondary); }
+.pp-h1, .pp-h2, .pp-h3, .pp-title, .pp-display { margin: 0; text-wrap: balance; hyphens: auto; }
+
+/* ID объекта: ТКШ-20251015, РЩ-29172891 */
+.pp-id {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  font-size: 0.92em;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: var(--numeric);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.pp-link {
+  color: var(--text-link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .pp-link:hover { color: var(--text-link-hover); } }
+
+.pp-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 var(--space-1);
+  font-family: var(--font-mono); font-size: var(--text-micro-size);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-xs);
+  box-shadow: inset 0 0 0 1px var(--border-default), inset 0 -1px 0 var(--border-default);
+}
+
+/* --------------------------------------------------------------------------
+   1. Иконки: <svg class="pp-icon"><use href="icons.svg#i-search"/></svg>
+   -------------------------------------------------------------------------- */
+.pp-icon {
+  width: var(--icon-md); height: var(--icon-md);
+  flex: none; display: inline-block; vertical-align: middle;
+  fill: none; stroke: currentColor; stroke-width: var(--stroke-icon);
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.pp-icon--sm { width: var(--icon-sm); height: var(--icon-sm); }
+.pp-icon--lg { width: var(--icon-lg); height: var(--icon-lg); }
+.pp-icon--xl { width: var(--icon-xl); height: var(--icon-xl); stroke-width: 1.5; }
+
+/* --------------------------------------------------------------------------
+   2. Фокус: одно кольцо на всё
+   -------------------------------------------------------------------------- */
+.pp-focusable:focus-visible,
+.pp-btn:focus-visible,
+.pp-segmented__item:focus-visible,
+.pp-tab:focus-visible,
+.pp-card--interactive:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* --------------------------------------------------------------------------
+   3. Кнопка .pp-btn
+   Варианты: --primary (одна на экран) --secondary --ghost --danger
+   Размеры: --sm 32 · обычная 40 · --lg 48 · --icon квадратная
+   Состояния: :hover :active (scale .97) :focus-visible :disabled [aria-busy="true"]
+   -------------------------------------------------------------------------- */
+.pp-btn {
+  --btn-bg: var(--action-secondary);
+  --btn-bg-hover: var(--action-secondary-hover);
+  --btn-bg-press: var(--action-secondary-press);
+  --btn-fg: var(--action-secondary-fg);
+  --btn-ring: inset 0 0 0 1px var(--border-default);
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  height: var(--control-md);
+  padding: 0 var(--space-4);
+  border: 0; border-radius: var(--radius-md);
+  background: var(--btn-bg); color: var(--btn-fg);
+  box-shadow: var(--btn-ring);
+  font-family: var(--font-sans); font-size: var(--text-body-sm-size); font-weight: var(--weight-semibold);
+  line-height: 1; white-space: nowrap; text-decoration: none;
+  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+  transition: var(--transition-control);
+}
+.pp-btn .pp-icon { width: 18px; height: 18px; margin-inline: -2px; }
+@media (hover: hover) and (pointer: fine) {
+  .pp-btn:hover:not(:disabled):not([aria-busy="true"]) { background: var(--btn-bg-hover); }
+}
+.pp-btn:active:not(:disabled):not([aria-busy="true"]) {
+  background: var(--btn-bg-press);
+  transform: scale(var(--press-scale));
+  transition-duration: var(--dur-press);
+}
+.pp-btn:disabled, .pp-btn[aria-disabled="true"] {
+  --btn-bg: var(--action-disabled); --btn-bg-hover: var(--action-disabled);
+  --btn-fg: var(--text-disabled); --btn-ring: none;
+  cursor: not-allowed;
+}
+.pp-btn--primary {
+  --btn-bg: var(--action-primary); --btn-bg-hover: var(--action-primary-hover);
+  --btn-bg-press: var(--action-primary-press); --btn-fg: var(--text-on-accent); --btn-ring: none;
+}
+.pp-btn--secondary { /* = значения по умолчанию, класс для ясности разметки */ }
+.pp-btn--ghost {
+  --btn-bg: transparent; --btn-bg-hover: var(--action-ghost-hover);
+  --btn-bg-press: var(--action-ghost-press); --btn-fg: var(--text-secondary); --btn-ring: none;
+}
+@media (hover: hover) and (pointer: fine) { .pp-btn--ghost:hover:not(:disabled) { color: var(--text-primary); } }
+.pp-btn--danger {
+  --btn-bg: var(--action-danger); --btn-bg-hover: var(--action-danger-hover);
+  --btn-bg-press: var(--action-danger-press); --btn-fg: var(--text-on-accent); --btn-ring: none;
+}
+.pp-btn--sm { height: var(--control-sm); padding: 0 var(--space-3); border-radius: var(--radius-sm); font-size: var(--text-label-size); }
+.pp-btn--sm .pp-icon { width: 16px; height: 16px; }
+.pp-btn--lg { height: var(--control-lg); padding: 0 var(--space-5); font-size: var(--text-body-size); }
+.pp-btn--icon { width: var(--control-md); padding: 0; }
+.pp-btn--icon.pp-btn--sm { width: var(--control-sm); }
+.pp-btn--icon.pp-btn--lg { width: var(--control-lg); }
+.pp-btn--block { display: flex; width: 100%; }
+
+/* Загрузка: ширина держится, подпись прячется, по центру спиннер */
+.pp-btn[aria-busy="true"] { color: transparent; cursor: progress; }
+.pp-btn[aria-busy="true"] > * { visibility: hidden; }
+.pp-btn[aria-busy="true"]::after {
+  content: ""; position: absolute; inset: 0; margin: auto;
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--btn-fg); border-right-color: transparent;
+  animation: pp-spin var(--dur-spin) var(--ease-linear) infinite;
+}
+@keyframes pp-spin { to { transform: rotate(1turn); } }
+
+/* --------------------------------------------------------------------------
+   4. Статус объекта .pp-status
+   <span class="pp-status pp-status--defect">
+     <svg class="pp-status__icon"><use href="icons.svg#i-status-defect"/></svg>
+     <span class="pp-status__label">Дефект</span></span>
+   «Не наблюдается» обведён пунктиром: это не норма и не дефект, это «не видно»
+   -------------------------------------------------------------------------- */
+.pp-status {
+  --st: var(--status-not-observed); --st-fg: var(--status-not-observed-fg);
+  --st-bg: var(--status-not-observed-bg); --st-border: var(--status-not-observed-border);
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 10px 0 7px;
+  border: 1px solid var(--st-border); border-radius: var(--radius-pill);
+  background: var(--st-bg); color: var(--st-fg);
+  font-size: var(--text-label-size); font-weight: var(--weight-semibold); line-height: 1;
+  white-space: nowrap;
+}
+.pp-status__icon {
+  width: 14px; height: 14px; flex: none; color: var(--st);
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.pp-status--ok        { --st: var(--status-ok);        --st-fg: var(--status-ok-fg);        --st-bg: var(--status-ok-bg);        --st-border: var(--status-ok-border); }
+.pp-status--suspected { --st: var(--status-suspected); --st-fg: var(--status-suspected-fg); --st-bg: var(--status-suspected-bg); --st-border: var(--status-suspected-border); }
+.pp-status--defect    { --st: var(--status-defect);    --st-fg: var(--status-defect-fg);    --st-bg: var(--status-defect-bg);    --st-border: var(--status-defect-border); }
+.pp-status--critical  { --st: var(--status-critical);  --st-fg: var(--status-critical-fg);  --st-bg: var(--status-critical-bg);  --st-border: var(--status-critical-border); }
+.pp-status--not-observed { border-style: dashed; }
+.pp-status--sm { height: 20px; padding: 0 8px 0 5px; gap: 4px; font-size: var(--text-caption-size); }
+.pp-status--sm .pp-status__icon { width: 12px; height: 12px; }
+
+/* «Критично» может один раз пульсировать при появлении (не в цикле) */
+.pp-status--pulse { animation: pp-pulse var(--dur-pulse) var(--ease-out) 1; }
+@keyframes pp-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--st-border); }
+  100% { box-shadow: 0 0 0 10px transparent; }
+}
+
+/* Точка статуса для карты и плотных списков */
+.pp-dot {
+  --st: var(--status-not-observed-solid);
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--st); box-shadow: 0 0 0 2px var(--surface-base);
+}
+.pp-dot--ok { --st: var(--status-ok-solid); }
+.pp-dot--suspected { --st: var(--status-suspected-solid); }
+.pp-dot--defect { --st: var(--status-defect-solid); }
+.pp-dot--critical { --st: var(--status-critical-solid); }
+.pp-dot--not-observed { background: transparent; border: 1.5px dashed var(--status-not-observed); }
+
+/* --------------------------------------------------------------------------
+   5. Опасность .pp-sev   data-level="1..4"
+   Четыре столбика растут по уровню: читается без цвета
+   <span class="pp-sev pp-sev--medium" data-level="2"><span class="pp-sev__bars">
+     <i></i><i></i><i></i><i></i></span>Средняя</span>
+   -------------------------------------------------------------------------- */
+.pp-sev {
+  --sev-c: var(--sev-low);
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 8px;
+  border-radius: var(--radius-xs);
+  box-shadow: inset 0 0 0 1px var(--border-default);
+  color: var(--sev-fg);
+  font-size: var(--text-label-size); font-weight: var(--weight-semibold); line-height: 1; white-space: nowrap;
+}
+.pp-sev__bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.pp-sev__bars > i { display: block; width: 3px; border-radius: 1px; background: var(--sev-track); }
+.pp-sev__bars > i:nth-child(1) { height: 5px; }
+.pp-sev__bars > i:nth-child(2) { height: 7.5px; }
+.pp-sev__bars > i:nth-child(3) { height: 10px; }
+.pp-sev__bars > i:nth-child(4) { height: 12px; }
+.pp-sev[data-level="1"] .pp-sev__bars > i:nth-child(-n+1),
+.pp-sev[data-level="2"] .pp-sev__bars > i:nth-child(-n+2),
+.pp-sev[data-level="3"] .pp-sev__bars > i:nth-child(-n+3),
+.pp-sev[data-level="4"] .pp-sev__bars > i { background: var(--sev-c); }
+.pp-sev--low    { --sev-c: var(--sev-low); }
+.pp-sev--medium { --sev-c: var(--sev-medium); }
+.pp-sev--high   { --sev-c: var(--sev-high); }
+.pp-sev--critical {
+  --sev-c: var(--sev-critical-fg);
+  background: var(--sev-critical-bg); color: var(--sev-critical-fg); box-shadow: none;
+}
+.pp-sev--critical .pp-sev__bars > i { background: var(--sev-critical-fg); }
+
+/* --------------------------------------------------------------------------
+   6. Уголки: фирменный приём. Рамка из 4 уголков вокруг любого блока
+   .pp-corners  (задать --corners-color / --corners-arm / --corners-stroke / --corners-inset)
+   -------------------------------------------------------------------------- */
+.pp-corners { position: relative; }
+.pp-corners::before {
+  --c: var(--corners-color, var(--scan));
+  --a: var(--corners-arm, var(--detect-arm));
+  --s: var(--corners-stroke, var(--stroke-detect));
+  content: ""; position: absolute; inset: var(--corners-inset, 0); pointer-events: none;
+  background:
+    linear-gradient(var(--c) 0 0) left top / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) left top / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) right top / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) right top / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) left bottom / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) left bottom / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) right bottom / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) right bottom / var(--s) var(--a);
+  background-repeat: no-repeat;
+}
+
+/* --------------------------------------------------------------------------
+   7. Рамка детекции .pp-detect
+   <figure class="pp-detect">
+     <img src="…" alt="Шкаф ТКШ-20251015 на опоре">
+     <span class="pp-detect__box" style="--x:38%;--y:52%;--w:22%;--h:20%">
+       <span class="pp-detect__tag">Коррозия корпуса · <b>0.95</b></span></span>
+   </figure>
+   Варианты бокса: --defect (оранжевые уголки), --critical, --muted (кандидат ниже порога)
+   -------------------------------------------------------------------------- */
+.pp-detect {
+  position: relative; margin: 0; overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  isolation: isolate;
+}
+.pp-detect > img, .pp-detect > .pp-detect__media { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pp-detect__box {
+  --c: var(--detect-frame); --a: var(--detect-arm); --s: var(--stroke-detect);
+  position: absolute;
+  left: var(--x, 30%); top: var(--y, 30%); width: var(--w, 30%); height: var(--h, 30%);
+  background:
+    linear-gradient(var(--c) 0 0) left top / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) left top / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) right top / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) right top / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) left bottom / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) left bottom / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) right bottom / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) right bottom / var(--s) var(--a);
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 1.5px var(--detect-frame-shadow));
+}
+.pp-detect__box--defect   { --c: var(--detect-defect); }
+.pp-detect__box--critical { --c: var(--status-critical-solid); }
+.pp-detect__box--suspected { --c: var(--status-suspected-solid); }   /* жёлтая: повреждение ЛКП, коррозия */
+.pp-detect__box--muted    { --c: var(--on-media-muted); }
+.pp-detect__tag {
+  position: absolute; left: 0; bottom: calc(100% + 4px);
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 20px; padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: var(--c); color: var(--detect-tag-fg);
+  font-family: var(--font-sans); font-size: var(--text-caption-size); font-weight: var(--weight-semibold);
+  line-height: 1; white-space: nowrap;
+}
+.pp-detect__tag b { font-family: var(--font-mono); font-weight: var(--weight-semibold); font-variant-numeric: var(--numeric); }
+.pp-detect__box--below .pp-detect__tag { bottom: auto; top: calc(100% + 4px); }
+/* Подпись под фото: место и время */
+.pp-detect__caption {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-6) var(--space-3) var(--space-2);
+  background: linear-gradient(to top, var(--detect-frame-shadow), transparent);
+  color: var(--on-media);
+  font-family: var(--font-mono); font-size: var(--text-caption-size);
+}
+/* Появление рамки: вырастает из маленького прямоугольника в центре объекта и проявляется */
+.pp-detect__box--enter { animation: pp-snap var(--dur-grow) var(--ease-out) both; }
+@keyframes pp-snap { from { opacity: 0; transform: scale(var(--grow-scale)); } 40% { opacity: 1; } to { opacity: 1; transform: none; } }
+
+/* --------------------------------------------------------------------------
+   8. Происхождение: «найдено моделью» и «подтверждено человеком»
+   Модель: циан в маленьких уголках. Человек: сплошная плашка с иконкой.
+   -------------------------------------------------------------------------- */
+.pp-prov {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 8px;
+  border-radius: var(--radius-xs);
+  font-size: var(--text-caption-size); font-weight: var(--weight-semibold); line-height: 1; white-space: nowrap;
+}
+.pp-prov .pp-icon { width: 14px; height: 14px; stroke-width: 2; }
+.pp-prov--model { color: var(--prov-model-fg); background: var(--prov-model-bg); border-radius: 0; }
+.pp-prov--model::before {
+  --c: var(--prov-model); --a: 5px; --s: 1.5px;
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(var(--c) 0 0) left top / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) left top / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) right top / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) right top / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) left bottom / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) left bottom / var(--s) var(--a),
+    linear-gradient(var(--c) 0 0) right bottom / var(--a) var(--s),
+    linear-gradient(var(--c) 0 0) right bottom / var(--s) var(--a);
+  background-repeat: no-repeat;
+}
+.pp-prov--human { color: var(--prov-human-fg); background: var(--prov-human-bg); box-shadow: inset 0 0 0 1px var(--border-default); }
+.pp-prov__conf { font-family: var(--font-mono); font-variant-numeric: var(--numeric); font-weight: var(--weight-medium); opacity: 0.85; }
+
+/* --------------------------------------------------------------------------
+   9. Карточка .pp-card
+   -------------------------------------------------------------------------- */
+.pp-card {
+  position: relative;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-card);
+  background: var(--surface-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ring);
+  color: var(--text-primary);
+}
+.pp-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.pp-card__title { margin: 0; font-size: var(--text-title-size); line-height: var(--text-title-lh); font-weight: var(--weight-semibold); letter-spacing: var(--text-title-tr); }
+.pp-card__meta { color: var(--text-muted); font-size: var(--text-caption-size); line-height: var(--text-caption-lh); }
+.pp-card__body { color: var(--text-secondary); font-size: var(--text-body-sm-size); line-height: var(--text-body-sm-lh); }
+.pp-card__foot { display: flex; align-items: center; gap: var(--space-2); margin-top: auto; padding-top: var(--space-1); }
+.pp-card__media { margin: calc(var(--space-card) * -1) calc(var(--space-card) * -1) 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; overflow: hidden; }
+.pp-card--flat { box-shadow: none; background: var(--surface-sunken); }
+.pp-card--interactive { cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .pp-card--interactive:hover { background: var(--surface-raised-hover); } }
+.pp-card--interactive:active { transform: scale(var(--press-scale-surface)); }
+.pp-card--selected { background: var(--surface-selected); box-shadow: inset 0 0 0 1px var(--border-accent); }
+
+/* --------------------------------------------------------------------------
+   10. KPI .pp-kpi
+   -------------------------------------------------------------------------- */
+.pp-kpi {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--surface-raised); border-radius: var(--radius-lg); box-shadow: var(--shadow-ring);
+}
+.pp-kpi__label { color: var(--text-secondary); font-size: var(--text-body-sm-size); line-height: var(--text-body-sm-lh); }
+.pp-kpi__value {
+  display: flex; align-items: baseline; gap: var(--space-2);
+  font-family: var(--font-display); font-weight: var(--weight-display);
+  font-size: var(--text-kpi-size); line-height: var(--text-kpi-lh); letter-spacing: var(--text-kpi-tr);
+  font-variant-numeric: var(--numeric); color: var(--text-primary);
+}
+.pp-kpi__unit { font-family: var(--font-sans); font-size: var(--text-h3-size); font-weight: var(--weight-medium); letter-spacing: 0; color: var(--text-muted); }
+.pp-kpi__delta {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: var(--text-caption-size); font-variant-numeric: var(--numeric);
+  color: var(--text-secondary);
+}
+.pp-kpi__delta .pp-icon { width: 14px; height: 14px; }
+.pp-kpi__delta--down .pp-icon { transform: rotate(90deg); }
+.pp-kpi__delta--up .pp-icon { transform: rotate(-90deg); }
+.pp-kpi__delta--good { color: var(--status-ok-fg); }
+.pp-kpi--accent { box-shadow: inset 0 0 0 1px var(--border-default), inset 0 2px 0 var(--accent); }
+
+/* --------------------------------------------------------------------------
+   11. Поля: .pp-field > .pp-field__label + .pp-input | .pp-select | .pp-search + .pp-field__hint
+   -------------------------------------------------------------------------- */
+.pp-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pp-field__label { font-size: var(--text-label-size); font-weight: var(--weight-semibold); color: var(--text-secondary); }
+.pp-field__hint { font-size: var(--text-caption-size); color: var(--text-muted); display: flex; gap: 4px; align-items: center; }
+.pp-field[data-invalid="true"] .pp-field__hint { color: var(--text-danger); }
+
+.pp-input, .pp-select > select {
+  width: 100%; height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: 0; border-radius: var(--radius-md); outline: 0;
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--border-default);
+  font: inherit; font-size: var(--text-body-sm-size);
+  transition: box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  appearance: none;
+}
+.pp-input::placeholder { color: var(--text-muted); }
+@media (hover: hover) and (pointer: fine) {
+  .pp-input:hover:not(:focus):not(:disabled), .pp-select > select:hover:not(:focus):not(:disabled) { box-shadow: inset 0 0 0 1px var(--border-strong); }
+}
+.pp-input:focus-visible, .pp-select > select:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-ring); }
+.pp-input:disabled, .pp-select > select:disabled { color: var(--text-disabled); background: var(--action-disabled); box-shadow: none; cursor: not-allowed; }
+.pp-input[aria-invalid="true"], .pp-field[data-invalid="true"] .pp-input { box-shadow: inset 0 0 0 2px var(--text-danger); }
+.pp-input--mono { font-family: var(--font-mono); letter-spacing: var(--tracking-mono); }
+
+.pp-select { position: relative; display: block; }
+.pp-select > select { padding-right: 36px; cursor: pointer; }
+.pp-select__chevron { position: absolute; right: 10px; top: 50%; width: 18px; height: 18px; margin-top: -9px; color: var(--text-muted); pointer-events: none; fill: none; stroke: currentColor; stroke-width: var(--stroke-icon); stroke-linecap: round; stroke-linejoin: round; }
+
+.pp-search { position: relative; display: block; }
+.pp-search__icon { position: absolute; left: 12px; top: 50%; width: 18px; height: 18px; margin-top: -9px; color: var(--text-muted); pointer-events: none; fill: none; stroke: currentColor; stroke-width: var(--stroke-icon); stroke-linecap: round; }
+.pp-search > .pp-input { padding-left: 38px; padding-right: 44px; }
+.pp-search > .pp-kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
+
+/* --------------------------------------------------------------------------
+   12. Сегменты .pp-segmented   (кнопки с aria-pressed)
+   -------------------------------------------------------------------------- */
+.pp-segmented {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--surface-sunken); border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+.pp-segmented__item {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 var(--space-3);
+  border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-secondary);
+  font: inherit; font-size: var(--text-label-size); font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.pp-segmented__item .pp-icon { width: 16px; height: 16px; }
+@media (hover: hover) and (pointer: fine) { .pp-segmented__item:hover { color: var(--text-primary); } }
+.pp-segmented__item[aria-pressed="true"], .pp-segmented__item[aria-checked="true"] {
+  background: var(--surface-overlay); color: var(--text-primary);
+  box-shadow: var(--shadow-raised), inset 0 0 0 1px var(--border-default);
+}
+
+/* --------------------------------------------------------------------------
+   13. Вкладки .pp-tabs > .pp-tab[aria-selected]
+   Активная отмечена линией маршрута
+   -------------------------------------------------------------------------- */
+.pp-tabs { display: flex; gap: var(--space-1); box-shadow: inset 0 -1px 0 var(--border-default); overflow-x: auto; scrollbar-width: none; }
+.pp-tab {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 40px; padding: 0 var(--space-3);
+  border: 0; background: transparent; color: var(--text-secondary);
+  font: inherit; font-size: var(--text-body-sm-size); font-weight: var(--weight-semibold);
+  cursor: pointer; white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.pp-tab::after {
+  content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: 0;
+  height: var(--stroke-route); background: var(--route-line);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .pp-tab:hover { color: var(--text-primary); } }
+.pp-tab[aria-selected="true"] { color: var(--text-primary); }
+.pp-tab[aria-selected="true"]::after { transform: scaleX(1); }
+.pp-tab__count {
+  min-width: 20px; height: 18px; padding: 0 5px; border-radius: var(--radius-xs);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--action-secondary); color: var(--text-muted);
+  font-family: var(--font-mono); font-size: var(--text-micro-size); font-variant-numeric: var(--numeric);
+}
+
+/* --------------------------------------------------------------------------
+   14. Таблица .pp-table   (плотная, ID моноширинным, цифры табличные)
+   -------------------------------------------------------------------------- */
+.pp-table-wrap { overflow: auto; border-radius: var(--radius-lg); background: var(--surface-raised); box-shadow: var(--shadow-ring); }
+.pp-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--text-body-sm-size); font-variant-numeric: var(--numeric); }
+.pp-table th {
+  position: sticky; top: 0; z-index: var(--z-raised);
+  height: 36px; padding: 0 var(--space-3);
+  background: var(--surface-raised);
+  color: var(--text-muted); text-align: left; white-space: nowrap;
+  font-size: var(--text-micro-size); font-weight: var(--weight-semibold); letter-spacing: var(--text-micro-tr); text-transform: uppercase;
+  box-shadow: inset 0 -1px 0 var(--border-default);
+}
+.pp-table td {
+  height: 44px; padding: 0 var(--space-3);
+  color: var(--text-secondary);
+  box-shadow: inset 0 -1px 0 var(--border-subtle);
+  white-space: nowrap;
+}
+.pp-table td.pp-table__main { color: var(--text-primary); }
+.pp-table tr:last-child td { box-shadow: none; }
+.pp-table .pp-table__num { text-align: right; font-family: var(--font-mono); letter-spacing: var(--tracking-mono); }
+.pp-table th.pp-table__num { font-family: var(--font-sans); }
+@media (hover: hover) and (pointer: fine) { .pp-table tbody tr:hover td { background: var(--surface-raised-hover); } }
+.pp-table tbody tr[aria-selected="true"] td { background: var(--surface-selected); }
+.pp-table tbody tr[aria-selected="true"] td:first-child { box-shadow: inset 2px 0 0 var(--accent), inset 0 -1px 0 var(--border-subtle); }
+.pp-table--dense td { height: 36px; }
+
+/* --------------------------------------------------------------------------
+   15. Тост .pp-toast  (выезжает на --shift-toast, живёт --toast-life)
+   -------------------------------------------------------------------------- */
+.pp-toast {
+  --st: var(--accent);
+  display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: var(--space-3);
+  width: min(420px, 100%); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--surface-overlay); color: var(--text-primary);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-overlay);
+  transition: opacity var(--dur-panel) var(--ease-out), transform var(--dur-panel) var(--ease-out);
+}
+@starting-style { .pp-toast { opacity: 0; transform: translateY(var(--shift-toast)); } }
+.pp-toast__icon { width: 20px; height: 20px; margin-top: 1px; color: var(--st); fill: none; stroke: currentColor; stroke-width: var(--stroke-icon); stroke-linecap: round; stroke-linejoin: round; }
+.pp-toast__title { font-size: var(--text-body-sm-size); font-weight: var(--weight-semibold); line-height: var(--text-body-sm-lh); }
+.pp-toast__text { margin-top: 2px; font-size: var(--text-caption-size); line-height: var(--text-caption-lh); color: var(--text-secondary); }
+.pp-toast__text .pp-mono { color: var(--text-primary); }
+.pp-toast--ok { --st: var(--status-ok); }
+.pp-toast--critical { --st: var(--status-critical); box-shadow: var(--shadow-overlay), inset 3px 0 0 var(--status-critical); }
+
+/* --------------------------------------------------------------------------
+   16. Подсказка .pp-tooltip  (появление после --delay-tooltip, соседние сразу)
+   -------------------------------------------------------------------------- */
+.pp-tooltip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  max-width: 280px; padding: 6px var(--space-2);
+  background: var(--surface-inverse); color: var(--text-inverse);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-float);
+  font-size: var(--text-caption-size); line-height: var(--text-caption-lh); font-weight: var(--weight-medium);
+}
+.pp-tooltip .pp-kbd { background: transparent; color: inherit; box-shadow: inset 0 0 0 1px currentColor; opacity: 0.7; }
+
+/* --------------------------------------------------------------------------
+   17. Скелетон .pp-skeleton  (после --delay-skeleton, держится ≥ 300 мс)
+   -------------------------------------------------------------------------- */
+.pp-skeleton {
+  display: block; height: 12px; border-radius: var(--radius-xs);
+  background: var(--surface-skeleton);
+  animation: pp-shimmer var(--dur-shimmer) var(--ease-linear) infinite;
+}
+.pp-skeleton--text { height: 12px; margin: 4px 0; }
+.pp-skeleton--title { height: 18px; width: 60%; }
+.pp-skeleton--block { height: 120px; border-radius: var(--radius-md); }
+@keyframes pp-shimmer { 50% { opacity: 0.45; } }
+
+/* --------------------------------------------------------------------------
+   18. Пустое состояние .pp-empty   (что не нашли и одно действие)
+   -------------------------------------------------------------------------- */
+.pp-empty {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-2);
+  padding: var(--space-12) var(--space-6);
+}
+.pp-empty__icon {
+  --corners-color: var(--border-strong); --corners-arm: 12px; --corners-stroke: 2px;
+  display: grid; place-items: center; width: 72px; height: 72px; margin-bottom: var(--space-3);
+  color: var(--text-muted);
+}
+.pp-empty__icon .pp-icon { width: 30px; height: 30px; stroke-width: 1.5; }
+.pp-empty__title { margin: 0; font-size: var(--text-title-size); font-weight: var(--weight-semibold); line-height: var(--text-title-lh); }
+.pp-empty__text { margin: 0; max-width: 42ch; font-size: var(--text-body-sm-size); color: var(--text-secondary); }
+.pp-empty__actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+
+/* --------------------------------------------------------------------------
+   19. Линия маршрута: разделитель, прогресс, таймлайн
+   -------------------------------------------------------------------------- */
+/* Разделитель: тонкая линия с узлами. Акцентный вариант рисуется слева направо */
+.pp-route {
+  position: relative; height: var(--stroke-route); margin: var(--space-6) 0;
+  background: var(--route-track); border: 0;
+}
+.pp-route--accent { background: var(--route-line); }
+.pp-route--draw { transform-origin: left center; animation: pp-draw-x var(--dur-draw) var(--ease-route) both; }
+@keyframes pp-draw-x { from { transform: scaleX(0); } }
+.pp-route__node {
+  position: absolute; top: 50%; left: var(--at, 0%);
+  width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  background: var(--route-node); box-shadow: inset 0 0 0 2px var(--node-c, var(--route-line));
+}
+.pp-route__node--ok { --node-c: var(--status-ok-solid); }
+.pp-route__node--suspected { --node-c: var(--status-suspected-solid); }
+.pp-route__node--defect { --node-c: var(--status-defect-solid); }
+.pp-route__node--critical { --node-c: var(--status-critical-solid); }
+.pp-route__node--filled { background: var(--node-c, var(--route-line)); }
+
+/* Прогресс прогона: заливка через scaleX, а не width */
+.pp-progress { position: relative; height: 4px; border-radius: 2px; background: var(--route-track); overflow: hidden; }
+.pp-progress__fill {
+  position: absolute; inset: 0; background: var(--route-line);
+  transform-origin: left center; transform: scaleX(var(--value, 0));
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+/* Таймлайн объекта: история проездов */
+.pp-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.pp-timeline__item { position: relative; display: grid; grid-template-columns: 20px 1fr; column-gap: var(--space-3); padding-bottom: var(--space-4); }
+.pp-timeline__item::before {
+  content: ""; position: absolute; left: 9px; top: 16px; bottom: -2px; width: var(--stroke-route);
+  background: var(--route-track);
+}
+.pp-timeline__item:last-child::before { display: none; }
+.pp-timeline__item--done::before { background: var(--route-line); }
+.pp-timeline__node {
+  --node-c: var(--route-line);
+  position: relative; z-index: 1; width: 12px; height: 12px; margin: 5px 0 0 4px; border-radius: 50%;
+  background: var(--surface-raised); box-shadow: inset 0 0 0 2px var(--node-c);
+}
+.pp-timeline__node--ok { --node-c: var(--status-ok); }
+.pp-timeline__node--suspected { --node-c: var(--status-suspected); }
+.pp-timeline__node--defect { --node-c: var(--status-defect); background: var(--status-defect); }
+.pp-timeline__node--critical { --node-c: var(--status-critical); background: var(--status-critical); }
+.pp-timeline__node--not-observed { --node-c: var(--status-not-observed); background: transparent; box-shadow: none; outline: 2px dashed var(--node-c); outline-offset: -2px; }
+.pp-timeline__time { font-family: var(--font-mono); font-size: var(--text-caption-size); color: var(--text-muted); font-variant-numeric: var(--numeric); }
+.pp-timeline__text { font-size: var(--text-body-sm-size); color: var(--text-primary); }
+.pp-timeline__meta { font-size: var(--text-caption-size); color: var(--text-secondary); margin-top: 2px; }
+
+/* --------------------------------------------------------------------------
+   20. Бейдж-счётчик .pp-badge
+   -------------------------------------------------------------------------- */
+.pp-badge {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: var(--action-secondary); color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: var(--text-caption-size); font-weight: var(--weight-medium);
+  font-variant-numeric: var(--numeric); white-space: nowrap;
+}
+.pp-badge--accent { background: var(--accent-subtle); color: var(--accent-fg); }
+
+/* Логотип, вставленный inline (копия logo/logo-dark.svg): цвета берутся из темы */
+.pp-logo { display: block; height: 32px; width: auto; }
+.pp-logo .pp-mark__frame, .pp-logo .pp-mark__route { fill: var(--logo-mark); }
+.pp-logo .pp-mark__dot { fill: var(--logo-dot); }
+.pp-logo .pp-logo__word { fill: var(--logo-word); }
+
+/* --------------------------------------------------------------------------
+   21. Знак и его анимация
+   Разметка знака (inline SVG из logo/mark.svg): классы .pp-mark__route(-l|-r),
+   .pp-mark__frame, .pp-mark__c, .pp-mark__dot уже стоят в файле.
+   .pp-mark-anim        однократно: маршрут прорисовывается слева направо →
+                        уголки защёлкиваются из 1.15, точка
+                        загорается циановым одновременно с ними.
+                        Длительность --dur-mark (900 мс), последний кадр = статичный знак.
+   .pp-mark-anim--loop  загрузчик: маршрут «едет», точка мерцает. Только пока ждём.
+   Перезапуск: снять и снова поставить класс (el.classList.remove/add + reflow).
+   При prefers-reduced-motion знак сразу в финальном кадре, загрузчик медленно мерцает.
+   -------------------------------------------------------------------------- */
+.pp-mark { display: block; overflow: visible; }
+.pp-mark-anim .pp-mark__route-l,
+.pp-mark-anim .pp-mark__route-r,
+.pp-mark-anim .pp-mark__frame,
+.pp-mark-anim .pp-mark__dot { transform-box: view-box; }
+.pp-mark-anim .pp-mark__route-l { transform-origin: 0 32px;  animation: pp-mark-route-l var(--dur-mark) var(--ease-route) both; }
+.pp-mark-anim .pp-mark__route-r { transform-origin: 43px 32px; animation: pp-mark-route-r var(--dur-mark) var(--ease-route) both; }
+.pp-mark-anim .pp-mark__frame   { transform-origin: 32px 32px; animation: pp-mark-frame var(--dur-mark) var(--ease-out) both; }
+.pp-mark-anim .pp-mark__dot     { transform-origin: 32px 32px; animation: pp-mark-dot var(--dur-mark) var(--ease-out) both; }
+@keyframes pp-mark-route-l { 0% { transform: scaleX(0); } 30%, 100% { transform: scaleX(1); } }
+@keyframes pp-mark-route-r { 0%, 22% { transform: scaleX(0); } 50%, 100% { transform: scaleX(1); } }
+@keyframes pp-mark-frame {
+  0%, 28% { opacity: 0; transform: scale(var(--snap-scale)); }
+  40% { opacity: 1; }
+  68%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pp-mark-dot {
+  0%, 28% { opacity: 0; transform: scale(0.5); }
+  40% { opacity: 1; }
+  68%, 100% { opacity: 1; transform: scale(1); }
+}
+
+.pp-mark-anim--loop .pp-mark__frame { animation: none; }
+.pp-mark-anim--loop .pp-mark__route-l { transform-origin: 0 32px; animation: pp-mark-loop-l calc(var(--dur-mark) * 1.6) var(--ease-route) infinite; }
+.pp-mark-anim--loop .pp-mark__route-r { transform-origin: 43px 32px; animation: pp-mark-loop-r calc(var(--dur-mark) * 1.6) var(--ease-route) infinite; }
+.pp-mark-anim--loop .pp-mark__dot { animation: pp-mark-loop-dot calc(var(--dur-mark) * 1.6) var(--ease-out) infinite; }
+@keyframes pp-mark-loop-l { 0% { transform: scaleX(0); } 25%, 80% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0.25; } }
+@keyframes pp-mark-loop-r { 0%, 18% { transform: scaleX(0); } 45%, 80% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0.25; } }
+@keyframes pp-mark-loop-dot { 0%, 30% { opacity: 0.35; } 50%, 85% { opacity: 1; } 100% { opacity: 0.35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-mark-anim:not(.pp-mark-anim--loop) .pp-mark__route-l,
+  .pp-mark-anim:not(.pp-mark-anim--loop) .pp-mark__route-r,
+  .pp-mark-anim:not(.pp-mark-anim--loop) .pp-mark__frame,
+  .pp-mark-anim:not(.pp-mark-anim--loop) .pp-mark__dot { animation: none; }
+  .pp-mark-anim--loop .pp-mark__route-l, .pp-mark-anim--loop .pp-mark__route-r { animation: none; }
+  .pp-mark-anim--loop .pp-mark__dot { animation: pp-mark-loop-dot 2400ms linear infinite; }
+  .pp-skeleton { animation: none; }
+  .pp-status--pulse { animation: none; }
+}

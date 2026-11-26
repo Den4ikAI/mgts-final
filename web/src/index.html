@@ -1,13 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <title>Web</title>
+  <title>Попутно</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Мониторинг ТКШ и РЩ МГТС по фото">
+  <link rel="icon" href="brand/logo/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="brand/logo/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="brand/logo/apple-touch-icon.png">
+  <script>
+    try { var t = localStorage.getItem('poputno.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
 </head>
-<body>
+<body class="pp-page">
   <app-root></app-root>
 </body>
 </html>

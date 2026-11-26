@@ -55,6 +55,9 @@ struct ImportForm {
     /// Один или несколько zip-архивов: фото (JPEG/PNG/WebP) и таблицы разметки (xlsx/csv) в папках
     #[schema(value_type = Vec<String>, format = Binary)]
     archive: Vec<Vec<u8>>,
+    /// Или папка как есть: файлы по одному, имя файла = относительный путь (`МП.РЩ/123.jpg`, `МП.РЩ/разметка.xlsx`)
+    #[schema(value_type = Vec<String>, format = Binary)]
+    files: Vec<Vec<u8>>,
     /// Название прогона (по умолчанию — имя архива)
     name: Option<String>,
 }
@@ -110,35 +113,40 @@ fn unpack<R: Read + Seek>(reader: R, out: &mut Unpacked) -> anyhow::Result<()> {
             continue;
         }
         let name = entry_name(f.name_raw());
-        if name.starts_with("__MACOSX/") || name.split('/').any(|c| c == ".." || c.starts_with('.')) {
+        if f.size() > MAX_IMAGE {
+            out.skipped.push(format!("{name}: больше 40 МБ"));
             continue;
         }
-        let (_, _, ext) = split(&name);
-        match ext.as_str() {
-            "jpg" | "jpeg" | "png" | "webp" => {
-                if f.size() > MAX_IMAGE {
-                    out.skipped.push(format!("{name}: больше 40 МБ"));
-                    continue;
-                }
-                let mut buf = Vec::with_capacity(f.size() as usize);
-                f.read_to_end(&mut buf)?;
-                out.images.push((name, buf));
-            }
-            "xlsx" | "xls" | "csv" | "tsv" => {
-                let mut buf = Vec::new();
-                f.read_to_end(&mut buf)?;
-                match read_table(&buf, &ext) {
-                    Ok(rows) => out.labels.extend(rows.into_iter().map(|mut r| {
-                        r.dir = split(&name).0;
-                        r
-                    })),
-                    Err(e) => out.skipped.push(format!("{name}: таблица не прочитана ({e})")),
-                }
-            }
-            _ => out.skipped.push(format!("{name}: не фото и не таблица")),
-        }
+        let mut buf = Vec::with_capacity(f.size() as usize);
+        f.read_to_end(&mut buf)?;
+        add_entry(out, name, buf);
     }
     Ok(())
+}
+
+/// One file of an archive or of a folder upload: photo, annotation table, or skipped.
+fn add_entry(out: &mut Unpacked, name: String, buf: Vec<u8>) {
+    if name.starts_with("__MACOSX/") || name.split('/').any(|c| c == ".." || c.starts_with('.')) {
+        return;
+    }
+    let (dir, _, ext) = split(&name);
+    match ext.as_str() {
+        "jpg" | "jpeg" | "png" | "webp" => {
+            if buf.len() as u64 > MAX_IMAGE {
+                out.skipped.push(format!("{name}: больше 40 МБ"));
+            } else {
+                out.images.push((name, buf));
+            }
+        }
+        "xlsx" | "xls" | "csv" | "tsv" => match read_table(&buf, &ext) {
+            Ok(rows) => out.labels.extend(rows.into_iter().map(|mut r| {
+                r.dir = dir.clone();
+                r
+            })),
+            Err(e) => out.skipped.push(format!("{name}: таблица не прочитана ({e})")),
+        },
+        _ => out.skipped.push(format!("{name}: не фото и не таблица")),
+    }
 }
 
 /// Header-driven: finds the file / status / description / class columns by name.
@@ -260,8 +268,16 @@ async fn import(State(s): State<AppState>, user: AuthUser, mut form: Multipart) 
     user.require(Perm::FramesUpload)?;
     let bad = |m: String| ApiError::bad_request(m);
     let mut archives = Vec::new();
+    let mut loose: Vec<(String, Vec<u8>)> = Vec::new();
     let mut name = None;
     while let Some(mut field) = form.next_field().await.map_err(|e| bad(format!("multipart: {e}")))? {
+        let is_zip = field.file_name().is_some_and(|n| n.to_lowercase().ends_with(".zip"));
+        if let (Some(file_name), false) = (field.file_name().map(str::to_string), is_zip) {
+            // A folder sent file by file: the file name carries the relative path.
+            let bytes = field.bytes().await.map_err(|e| bad(format!("{file_name}: {e}")))?;
+            loose.push((file_name.replace('\\', "/"), bytes.to_vec()));
+            continue;
+        }
         if let Some(file_name) = field.file_name().map(str::to_string) {
             // Stream to a temp file: archives can be bigger than we want in memory.
             let mut tmp = tempfile::tempfile().map_err(|e| ApiError::Internal(e.into()))?;
@@ -273,16 +289,25 @@ async fn import(State(s): State<AppState>, user: AuthUser, mut form: Multipart) 
             name = Some(field.text().await.map_err(|e| bad(e.to_string()))?.trim().to_string()).filter(|n| !n.is_empty());
         }
     }
-    if archives.is_empty() {
-        return Err(bad("no archive: send zip files in multipart field `archive`".into()));
+    if archives.is_empty() && loose.is_empty() {
+        return Err(bad("no files: send zip archives in field `archive` or a folder's files in field `files`".into()));
     }
-    let name = name.unwrap_or_else(|| archives.iter().map(|(n, _)| n.as_str()).collect::<Vec<_>>().join(" + "));
+    let name = name.unwrap_or_else(|| {
+        let mut parts: Vec<String> = archives.iter().map(|(n, _)| n.clone()).collect();
+        if let Some(top) = loose.first().map(|(p, _)| p.split('/').next().unwrap_or("файлы").to_string()) {
+            parts.push(if loose.len() > 1 { format!("{top} ({} файлов)", loose.len()) } else { top });
+        }
+        parts.join(" + ")
+    });
 
     let unpacked = tokio::task::spawn_blocking(move || -> anyhow::Result<Unpacked> {
         let mut out = Unpacked { images: Vec::new(), labels: Vec::new(), skipped: Vec::new() };
         for (file_name, mut tmp) in archives {
             tmp.rewind()?;
             unpack(tmp, &mut out).map_err(|e| anyhow::anyhow!("{file_name}: не zip или повреждён ({e})"))?;
+        }
+        for (path, bytes) in loose {
+            add_entry(&mut out, path, bytes);
         }
         Ok(out)
     })
