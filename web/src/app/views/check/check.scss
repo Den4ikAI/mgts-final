@@ -1,0 +1,40 @@
+/* Only what the site's app.css has no class for: object/coords fields, the «Анализ…» state, history buttons. */
+.ux-checkmeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: end;
+}
+@media (max-width: 720px) {
+  .ux-checkmeta { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ux-checkmeta__id { grid-column: 1 / -1; }
+}
+
+.ux-scanbox { --c: var(--scan); animation: ux-scan-pulse 1.4s var(--ease-out) infinite; }
+@keyframes ux-scan-pulse { 50% { opacity: 0.4; } }
+
+.ux-pending { color: var(--text-secondary); }
+.ux-skel { display: flex; flex-direction: column; gap: var(--space-2); }
+.ux-skel span { display: block; height: 12px; border-radius: 6px; background: var(--surface-sunken); animation: ux-scan-pulse 1.4s var(--ease-out) infinite; }
+.ux-skel span:nth-child(1) { width: 70%; }
+.ux-skel span:nth-child(2) { width: 50%; }
+.ux-skel span:nth-child(3) { width: 85%; }
+
+
+.ux-histitem {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.ux-histitem > span:last-child { min-width: 0; display: flex; flex-direction: column; }
+@media (hover: hover) and (pointer: fine) { .ux-histitem:hover { background: var(--surface-raised-hover); } }
+.ux-histitem:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 2px; }
+.ux-batch > li { min-width: 0; }
+
+/* portrait photos: keep the card within the screen */
+.ux-verdict .ux-photo--lg { width: fit-content; }
+.ux-verdict .ux-photo--lg > img { width: auto; max-width: 100%; max-height: 72vh; }

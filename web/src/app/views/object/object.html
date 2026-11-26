@@ -1,0 +1,162 @@
+@if (loading()) {
+  <div class="ux-page"><pp-loader text="Загружаем историю объекта" /></div>
+} @else if (!vm()) {
+  <div class="ux-page">
+    <pp-empty icon="search" [title]="'Объекта ' + id() + ' нет в данных'" text="Проверьте ID или откройте реестр и найдите объект поиском.">
+      <a class="pp-btn pp-btn--secondary" routerLink="/objects">К реестру</a>
+    </pp-empty>
+  </div>
+} @else {
+  @let v = vm()!;
+  @let o = v.o;
+  <div class="ux-page ux-page--wide">
+    <nav class="ux-crumbs" aria-label="Путь"><a routerLink="/objects" class="pp-link">Объекты</a><span aria-hidden="true">/</span><span class="pp-mono">{{ o.id }}</span></nav>
+    <header class="ux-objhead">
+      <div class="ux-objhead__main">
+        <h2 class="pp-h2 ux-objhead__title"><span class="ux-objhead__kind"><pp-kind-icon [kind]="o.kind" /></span>{{ o.id }}</h2>
+        <div class="ux-objhead__pills">
+          <pp-status [status]="o.displayStatus" [label]="o.displayStatusLabel" />
+          @if (o.severityRank) { <pp-sev [sev]="o.maxSeverity" [label]="o.severityLabel" /> }
+          <span class="ux-dotsep">{{ store.tax()?.kindLongLabel(o.kind) }}</span>
+        </div>
+        @if (v.gt) { <p class="ux-objhead__addr">Разметка организаторов: {{ v.gt }}</p> }
+      </div>
+      <div class="ux-objhead__actions">
+        @if (v.pending.length && auth.can('review')) {
+          <a class="pp-btn pp-btn--primary" routerLink="/queue"><pp-icon name="queue" />Разобрать {{ v.pending.length }} в очереди</a>
+        }
+      </div>
+    </header>
+
+    <div class="ux-grid ux-grid--object">
+      <div class="ux-col">
+        <section class="ux-panel">
+          <header class="ux-panel__head">
+            <h3 class="ux-panel__title">{{ v.showBA ? 'Было и сейчас' : 'Кадр' }}</h3>
+            <span class="ux-panel__meta">{{ v.dets.length }} {{ v.framesWord }}</span>
+          </header>
+          @if (v.showBA && !main()) {
+            <div class="ux-ba">
+              <figure class="ux-ba__item"><figcaption class="ux-ba__cap"><span>Было</span><span class="pp-mono">{{ fmt.dateTime(v.before.createdAt) }}</span></figcaption><pp-evidence [d]="v.before" [caption]="false" /></figure>
+              <figure class="ux-ba__item"><figcaption class="ux-ba__cap"><span>Сейчас</span><span class="pp-mono">{{ fmt.dateTime(v.after.createdAt) }}</span></figcaption><pp-evidence [d]="v.after" [caption]="false" /></figure>
+            </div>
+          } @else if (v.shown) {
+            <pp-evidence [d]="v.shown" cls="ux-photo--lg" />
+          } @else {
+            <pp-empty icon="camera" title="Кадров нет" text="Объект есть в реестре, но кадров по нему ещё нет." />
+          }
+          @if (v.dets.length > 1) {
+            <ol class="ux-strip" aria-label="Все кадры">
+              @for (d of v.dets; track d.id) {
+                <li>
+                  <button type="button" [class]="'ux-strip__item' + (v.shown && d.id === v.shown.id && main() ? ' is-selected' : '')" (click)="show(d.id)" [attr.title]="d.defectLabel + ' · ' + fmt.dateTime(d.createdAt)">
+                    <pp-thumb [d]="d" /><span class="pp-mono">{{ fmt.dateTime(d.createdAt) }}</span>
+                  </button>
+                </li>
+              }
+            </ol>
+          }
+          @if (main()) {
+            <button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" (click)="backToBA()">Вернуть «было и сейчас»</button>
+          }
+          @if (v.why?.rationale) {
+            <div class="ux-why">
+              <span class="pp-prov pp-prov--model"><pp-icon name="frame" />Ответ модели · <span class="pp-mono">{{ fmt.dateTime(v.why.createdAt) }}</span><span class="pp-prov__conf">{{ fmt.conf(v.why.confidence) }}</span></span>
+              <p class="ux-why__text">{{ v.why.rationale }}</p>
+            </div>
+          }
+        </section>
+
+        <section class="ux-panel ux-panel--flush">
+          <header class="ux-panel__head"><h3 class="ux-panel__title">Кадры и решения</h3></header>
+          <div class="ux-scroll">
+            <table class="pp-table pp-table--dense ux-table">
+              <thead>
+                <tr>
+                  <th>Время</th><th>Ответ модели</th><th class="pp-table__num">Уверенность</th><th>Опасность</th><th>Маршрут</th><th>Решение</th>
+                  @if (v.hasTruth) { <th>Разметка</th> }
+                  <th>Файл</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of v.dets; track d.id) {
+                  <tr data-action="show" (click)="show(d.id)" [attr.aria-selected]="d.id === v.shown?.id ? 'true' : null">
+                    <td class="pp-mono">{{ fmt.dateTime(d.createdAt) }}</td>
+                    <td class="pp-table__main">{{ d.defectLabel }}</td>
+                    <td class="pp-table__num">{{ fmt.conf(d.confidence) }}</td>
+                    <td><pp-sev [sev]="d.severity" [label]="d.severityLabel" /></td>
+                    <td>{{ d.routeLabel }}</td>
+                    <td>{{ d.reviewStateLabel }}</td>
+                    @if (v.hasTruth) { <td>{{ d.truth?.label ?? 'нет' }}</td> }
+                    <td class="pp-mono ux-break">{{ d.file || 'нет' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="ux-col">
+        <section class="ux-panel">
+          <header class="ux-panel__head"><h3 class="ux-panel__title">Что делать</h3></header>
+          <p class="ux-reco ux-reco--lg">{{ o.recommendation || 'Действий не требуется.' }}</p>
+          <dl class="ux-kv">
+            <dt>Дефект</dt><dd>{{ o.severityRank ? o.defectLabel : 'нет' }}</dd>
+            <dt>Последний кадр</dt><dd><span class="pp-mono">{{ fmt.dateTime(o.lastSeenAt) }}</span></dd>
+            <dt>Уверенность</dt><dd><span class="pp-mono">{{ fmt.conf(o.confidence) }}</span></dd>
+            <dt>Ждут решения</dt><dd><span class="pp-mono">{{ o.pendingCount }}</span></dd>
+            @if (o.truth) { <dt>Разметка</dt><dd>{{ o.truth.label }}</dd> }
+          </dl>
+          @if (v.last?.probs) {
+            <div class="ux-block">
+              <h3 class="ux-block__title">Последний кадр · <span class="pp-mono">{{ fmt.dateTime(v.last.createdAt) }}</span></h3>
+              <pp-probs [d]="v.last" />
+            </div>
+          }
+        </section>
+
+        <section class="ux-panel">
+          <header class="ux-panel__head"><h3 class="ux-panel__title">Наряды</h3><span class="ux-panel__meta pp-mono">{{ o.workOrders.length }}</span></header>
+          @if (o.workOrders.length) {
+            <ul class="ux-wolist">
+              @for (w of o.workOrders; track w.id) {
+                <li>
+                  <a class="ux-wolist__item" [routerLink]="['/orders', w.id]">
+                    <span [class]="'ux-wo-state ux-wo-state--' + w.state">{{ w.stateLabel }}</span><span class="ux-wolist__task">{{ w.task || 'Наряд' }}</span>
+                    <span class="pp-mono pp-muted">{{ fmt.dateTime(w.closedAt || w.openedAt) }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="ux-note">Нарядов по объекту нет.</p>
+          }
+          @if (auth.can('work_orders_manage') && !hasOpenOrder(o)) {
+            <button class="pp-btn pp-btn--primary" type="button" [disabled]="sending()" (click)="sendBrigade(o)"><pp-icon name="route" />Отправить бригаду</button>
+          }
+        </section>
+
+        <section class="ux-panel">
+          <header class="ux-panel__head"><h3 class="ux-panel__title">История</h3><span class="ux-panel__meta">новые сверху</span></header>
+          @if (v.events.length) {
+            <ol class="pp-timeline ux-feed">
+              @for (e of v.events; track e.id ?? $index; let i = $index) {
+                <li [class]="'pp-timeline__item' + (i ? ' pp-timeline__item--done' : '')">
+                  <span [class]="'pp-timeline__node pp-timeline__node--' + eventNode(e)"></span>
+                  <div>
+                    <span class="pp-timeline__time">{{ e.at ? fmt.dateTime(e.at) : 'без времени' }}</span>
+                    <div class="pp-timeline__text">{{ e.label }}</div>
+                    <div class="pp-timeline__meta">{{ e.text }}</div>
+                  </div>
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="ux-note">Событий нет.</p>
+          }
+        </section>
+      </div>
+    </div>
+  </div>
+}

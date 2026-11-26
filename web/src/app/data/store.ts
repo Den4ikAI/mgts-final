@@ -1,6 +1,6 @@
 import { HttpClient, HttpEventType } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/auth';
 import { Api } from '../core/api';
 import { Dataset, Det, M, T } from './legacy';
@@ -102,6 +102,8 @@ export class PoputnoStore {
   readonly error = signal<string | null>(null);
   /** Last live message (frame_analyzed, frame_objects, object events), for views that react to them. */
   readonly live = signal<LiveMessage | null>(null);
+  /** Every frame_analyzed / frame_objects message (a signal would merge two close ones). */
+  readonly frames$ = new Subject<LiveMessage>();
   /** Last critical alert for a toast: {objectId, text}. */
   readonly alert = signal<{ objectId: string; text: string; at: string } | null>(null);
 
@@ -129,16 +131,18 @@ export class PoputnoStore {
     try {
       const taxJson = await firstValueFrom(this.http.get<any>('/api/taxonomy'));
       const tax = T.createTaxonomy(taxJson);
-      const [objects, queue, quality] = await Promise.all([
+      const [objects, queue, quality, events] = await Promise.all([
         firstValueFrom(this.http.get<any[]>('/api/objects')),
         firstValueFrom(this.http.get<any[]>('/api/queue')).catch(() => []),
         firstValueFrom(this.http.get<any>('/api/quality')).catch(() => null),
+        firstValueFrom(this.http.get<any[]>('/api/events', { params: { limit: '300' } })).catch(() => []),
       ]);
       const ds = M.createDataset(
         {
           meta: { source: 'api', demo: false, note: null, photoBase: '', apiBase: '' },
           objects,
           detections: queue.map(toRawDetection),
+          events,
           quality,
           runs: quality?.runs || [],
           user: this.auth.user(),
@@ -234,6 +238,30 @@ export class PoputnoStore {
     }
     this.touch();
     this.scheduleRefresh(objectId, 600);
+  }
+
+  /* ------------------------------------------------------------- work orders */
+
+  /** «Отправить бригаду»: work_order_opened in the object's history (Kafka). */
+  async openWorkOrder(objectId: string, assignee = 'Бригада 3 · Сидоров'): Promise<string> {
+    const r = await firstValueFrom(
+      this.http.post<{ work_order_id: string }>(`/api/objects/${encodeURIComponent(objectId)}/work-orders`, { assignee }),
+    );
+    this.scheduleRefresh(objectId, 500);
+    return r.work_order_id;
+  }
+
+  /**
+   * The brigade closes the order. The «after» photo goes through the normal pipeline
+   * (S3 → model, bound to this object), its URI is stored on the event; the object returns to «Норма».
+   */
+  async closeWorkOrder(objectId: string, workOrderId: string, after?: File | null) {
+    let afterUri: string | null = null;
+    if (after) afterUri = (await this.uploadFrames([after], { objectId }))[0]?.media_uri ?? null;
+    await firstValueFrom(
+      this.http.post(`/api/objects/${encodeURIComponent(objectId)}/work-orders/${workOrderId}/close`, { after_photo_uri: afterUri }),
+    );
+    this.scheduleRefresh(objectId, 500);
   }
 
   /* ------------------------------------------------------------- photos */
@@ -337,8 +365,12 @@ export class PoputnoStore {
     this.liveSub = this.api.live().subscribe((m: any) => {
       const msg = m as LiveMessage;
       this.live.set(msg);
+      if (msg.payload.type === 'frame_analyzed' || msg.payload.type === 'frame_objects') {
+        this.frames$.next(msg);
+        return;
+      }
       const ds = this.ds();
-      if (!ds || msg.payload.type === 'frame_analyzed' || msg.payload.type === 'frame_objects') return;
+      if (!ds) return;
       const events = M.applyEvent(ds, msg, { project: false });
       for (const e of events) {
         if (e.type === 'observed' && e.objectId) this.scheduleRefresh(e.objectId, 400);

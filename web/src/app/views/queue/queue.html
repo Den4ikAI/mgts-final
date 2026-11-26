@@ -1,0 +1,157 @@
+@if (empty()) {
+  <div class="ux-page">
+    <pp-empty icon="upload" title="Данные ещё не загружены" text="Своих загрузок пока нет. Загрузите фото или датасет организаторов.">
+      <a class="pp-btn pp-btn--primary" routerLink="/import"><pp-icon name="upload" />Загрузить данные</a>
+    </pp-empty>
+  </div>
+} @else {
+  <div class="ux-queue" [class.is-empty]="!list().length">
+    <aside class="ux-qlist" aria-label="Кадры в очереди">
+      <header class="ux-qlist__head">
+        <div><span class="ux-qlist__count pp-mono">{{ list().length }}</span> {{ plural(list().length, ['кадр ждёт', 'кадра ждут', 'кадров ждут']) }} решения</div>
+        <div class="ux-qlist__sub">
+          @if (critCount(); as crit) {<span class="ux-hot">{{ crit }} {{ plural(crit, ['критичный', 'критичных', 'критичных']) }}</span> · }критичные идут первыми
+        </div>
+        <div class="ux-qlist__last" aria-live="polite">
+          @if (last(); as l) {<pp-icon name="check" cls="pp-icon--sm" /><span class="pp-id">{{ l.id }}</span> {{ l.text }}}
+        </div>
+      </header>
+      <ul class="ux-qlist__items" role="list">
+        @let w = window();
+        @if (w.start) {
+          <li class="ux-qlist__more pp-mono">Выше ещё {{ w.start }} {{ plural(w.start, ['кадр', 'кадра', 'кадров']) }} · J и K листают</li>
+        }
+        @for (d of w.items; track d.id; let k = $index) {
+          <li>
+            <button class="ux-qitem" type="button" [class.is-selected]="d.id === selId()" [class.is-critical]="d.isCritical"
+              [class.is-leaving]="leaving() && d.id === selId()" [attr.data-id]="d.id" [attr.aria-current]="d.id === selId()"
+              [id]="'q-' + (w.start + k)" (click)="select(d.id)">
+              <pp-thumb [d]="d" />
+              <span class="ux-qitem__body">
+                <span class="ux-qitem__top"><span class="pp-id">{{ d.objectId || 'не сопоставлен' }}</span><span class="pp-mono ux-qitem__time">{{ d.createdAt ? fmt.dateTime(d.createdAt) : '' }}</span></span>
+                <span class="ux-qitem__label">{{ d.defectLabel }}</span>
+                <span class="ux-qitem__meta"><pp-sev [sev]="d.severity" [label]="d.severityLabel" /><span class="pp-mono">{{ fmt.conf(d.confidence) }}</span></span>
+              </span>
+            </button>
+          </li>
+        }
+        @if (w.end < list().length) {
+          <li class="ux-qlist__more pp-mono">Ниже ещё {{ list().length - w.end }} {{ plural(list().length - w.end, ['кадр', 'кадра', 'кадров']) }} · J и K листают</li>
+        }
+      </ul>
+    </aside>
+
+    <section class="ux-qdetail" [class.is-leaving]="leaving()" aria-label="Кадр">
+      @if (current(); as d) {
+        @let o = d.object;
+        @let tax = store.tax();
+        <div class="ux-qdetail__head">
+          <div class="ux-qdetail__pills">
+            <pp-status [status]="d.isCritical ? 'critical' : 'suspected'" [label]="tax.statusLabel(d.isCritical ? 'critical' : 'suspected')" [pulse]="pulse()" />
+            <span class="ux-qdetail__pos pp-mono">{{ index() + 1 }} / {{ list().length }}</span>
+          </div>
+          <h2 class="ux-qdetail__title">{{ d.defectLabel }}</h2>
+          <p class="ux-qdetail__sub">
+            @if (o) {
+              <a class="pp-id ux-link" [routerLink]="['/objects', o.id]">{{ o.id }}</a>
+              <span class="ux-dotsep"><pp-kind-icon [kind]="o.kind" />{{ o.kindLabel }}</span>
+            } @else {
+              <span class="pp-muted">Объект не сопоставлен</span>
+            }
+          </p>
+        </div>
+
+        <div class="ux-qdetail__grid">
+          <div class="ux-qdetail__media">
+            <pp-evidence [d]="d" cls="ux-photo--lg" />
+            @if (d.rationale) {
+              <div class="ux-why">
+                <span class="pp-prov pp-prov--model"><pp-icon name="frame" />Найдено моделью<span class="pp-prov__conf">{{ fmt.conf(d.confidence) }}</span></span>
+                <p class="ux-why__text">{{ d.rationale }}</p>
+              </div>
+            }
+          </div>
+          <div class="ux-qdetail__facts">
+            <dl class="ux-kv">
+              <dt>Опасность</dt><dd><pp-sev [sev]="d.severity" [label]="d.severityLabel" /></dd>
+              <dt>Уверенность</dt><dd><span class="pp-mono">{{ fmt.conf(d.confidence) }}</span></dd>
+              <dt>Маршрут</dt><dd>{{ d.routeLabel }}</dd>
+              <dt>Время кадра</dt><dd><span class="pp-mono">{{ fmt.dateTime(d.createdAt) }}</span></dd>
+              @if (d.extra?.gt_state) {
+                <dt>Описание в разметке</dt><dd>{{ d.extra.gt_state }}@if (d.extra.gt_note) { · {{ d.extra.gt_note }}}</dd>
+              }
+              @if (d.file) {
+                <dt>Файл</dt><dd><span class="pp-mono ux-break">{{ d.extra?.source_path || d.file }}</span></dd>
+              }
+              @if (d.truth) {
+                <dt>Разметка</dt>
+                <dd>{{ d.truth.label }}@if (d.correct === true) { <span class="ux-ok"><pp-icon name="check" cls="pp-icon--sm" />совпадает</span>} @else if (d.correct === false) { <span class="pp-muted">не совпадает</span>}</dd>
+              }
+              @if (o && o.passes > 1) {
+                <dt>Кадров по объекту</dt><dd><span class="pp-mono">{{ o.passes }}</span></dd>
+              }
+            </dl>
+            @if (d.probs) {
+              <div class="ux-block"><h3 class="ux-block__title">Вероятности</h3><pp-probs [d]="d" /></div>
+            }
+            <div class="ux-block"><h3 class="ux-block__title">Рекомендация</h3><p class="ux-reco">{{ d.recommendation || 'нет' }}</p></div>
+            @if (history().length) {
+              <div class="ux-block">
+                <h3 class="ux-block__title">История объекта</h3>
+                <ol class="pp-timeline ux-feed ux-feed--compact">
+                  @for (e of history(); track e.id) {
+                    <li class="pp-timeline__item">
+                      <span [class]="'pp-timeline__node pp-timeline__node--' + eventNode(e)"></span>
+                      <div><span class="pp-timeline__time">{{ e.at ? fmt.dateTime(e.at) : 'без времени' }}</span>&ngsp;<span class="pp-timeline__text">{{ e.label }}</span>
+                        <div class="pp-timeline__meta">{{ e.text }}</div></div>
+                    </li>
+                  }
+                </ol>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="ux-actions" id="q-actions">
+          @if (!canReview()) {
+            <p class="ux-note"><pp-icon name="user" cls="pp-icon--sm" /> Решение принимает диспетчер. Роль «{{ roleLabel() }}» только смотрит очередь.</p>
+          } @else if (!d.objectId) {
+            <p class="ux-note"><pp-icon name="alert" cls="pp-icon--sm" /> Кадр не привязан к объекту реестра, решение по нему записать некуда.</p>
+          } @else {
+            @switch (mode()) {
+              @case ('other') {
+                <form class="ux-reasons ux-reasons--other" data-other role="group" aria-label="Своя причина ложного срабатывания" (submit)="submitOther($event, other)">
+                  <span class="ux-reasons__title">Почему ложное?</span>
+                  <input #other class="pp-input ux-reasons__input" name="other" maxlength="200" placeholder="Своя причина, например «это не ТКШ, а рекламный щит»" autocomplete="off" required />
+                  <button class="pp-btn pp-btn--primary pp-btn--sm" type="submit">Записать<span class="pp-kbd">Enter</span></button>
+                  <button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" (click)="openReasons()"><span class="pp-kbd">Esc</span>Назад</button>
+                </form>
+              }
+              @case ('reasons') {
+                <div class="ux-reasons" role="group" aria-label="Причина ложного срабатывания">
+                  <span class="ux-reasons__title">Ложное:</span>
+                  @for (r of reasons(); track r[0]; let i = $index) {
+                    <button class="pp-btn pp-btn--secondary pp-btn--sm" type="button" [attr.data-action]="r[0] === 'other' ? 'other' : 'reason'" [attr.data-reason]="r[0]"
+                      [title]="'Клавиша ' + (i + 1)" (click)="pickReason(r[0], $event)"><span class="ux-reasons__n pp-mono">{{ i + 1 }}</span>{{ r[0] === 'other' ? r[1] + '…' : r[1] }}</button>
+                  }
+                  <button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" title="Назад (Esc)" (click)="cancel()">Назад</button>
+                </div>
+              }
+              @default {
+                <div class="ux-actions__row">
+                  <button class="pp-btn pp-btn--primary pp-btn--lg" type="button" (click)="decide('confirm', null, { viaMouse: $event.detail > 0 })"><pp-icon name="check" />{{ decisions().confirm?.label }}<span class="pp-kbd ux-kbd-on">Y</span></button>
+                  <button class="pp-btn pp-btn--secondary pp-btn--lg" type="button" (click)="openReasons()"><pp-icon name="close" />{{ decisions().reject?.label }}<span class="pp-kbd">N</span></button>
+                  <button class="pp-btn pp-btn--secondary pp-btn--lg" type="button" (click)="decide('need_recapture', null, { viaMouse: $event.detail > 0 })"><pp-icon name="camera" />{{ decisions().need_recapture?.label }}<span class="pp-kbd">R</span></button>
+                </div>
+              }
+            }
+          }
+        </div>
+      } @else {
+        <pp-empty icon="check" title="Очередь пуста" text="Все кадры разобраны. Новые появятся здесь после следующего проезда машины.">
+          <a class="pp-btn pp-btn--secondary" routerLink="/objects">Открыть реестр объектов</a>
+        </pp-empty>
+      }
+    </section>
+  </div>
+}

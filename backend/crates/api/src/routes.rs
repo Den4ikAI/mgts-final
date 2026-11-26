@@ -32,7 +32,10 @@ pub fn router(state: AppState) -> Router {
         .route("/api/objects", get(list_objects))
         .route("/api/objects/{id}", get(get_object))
         .route("/api/objects/{id}/history", get(object_history))
+        .route("/api/events", get(recent_events))
         .route("/api/objects/{id}/reviews", post(post_review))
+        .route("/api/objects/{id}/work-orders", post(open_work_order))
+        .route("/api/objects/{id}/work-orders/{wo}/close", post(close_work_order))
         .route("/api/queue", get(review_queue))
         .route("/api/stats", get(stats))
         .route("/api/stream", get(stream))
@@ -213,6 +216,43 @@ async fn object_history(
     Ok(Json(rows))
 }
 
+#[derive(Serialize, sqlx::FromRow, ToSchema)]
+struct RecentEvent {
+    event_id: Uuid,
+    object_id: String,
+    #[sqlx(rename = "type")]
+    #[serde(rename = "type")]
+    #[schema(example = "observed")]
+    kind: String,
+    #[schema(value_type = Object)]
+    payload: Value,
+    source: String,
+    occurred_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+struct EventsQuery {
+    /// По умолчанию 100, максимум 1000
+    limit: Option<i64>,
+}
+
+/// Последние события по всем объектам — лента на «Сводке».
+#[utoipa::path(get, path = "/api/events", tag = "objects", params(EventsQuery),
+    security(("bearer" = [])),
+    responses((status = 200, body = Vec<RecentEvent>), (status = 401, body = ErrorBody)))]
+async fn recent_events(State(s): State<AppState>, user: AuthUser, Query(q): Query<EventsQuery>) -> ApiResult<Vec<RecentEvent>> {
+    user.require(Perm::ObjectsRead)?;
+    let rows = sqlx::query_as::<_, RecentEvent>(
+        "SELECT event_id, object_id, type, payload, source, occurred_at
+         FROM object_events ORDER BY occurred_at DESC LIMIT $1",
+    )
+    .bind(q.limit.unwrap_or(100).clamp(1, 1000))
+    .fetch_all(&s.db)
+    .await?;
+    Ok(Json(rows))
+}
+
 /// Очередь разбора: ожидающие срабатывания, критичные первыми.
 #[utoipa::path(get, path = "/api/queue", tag = "review",
     security(("bearer" = [])),
@@ -284,6 +324,62 @@ async fn post_review(
     s.producer
         .send(topics::OBJECT_EVENTS, &Envelope::new(id, "api.review", ev))
         .await?;
+    Ok(StatusCode::ACCEPTED)
+}
+
+#[derive(Deserialize, ToSchema, Default)]
+struct OpenWorkOrder {
+    /// Бригада, например «Бригада 3 · Сидоров»
+    assignee: Option<String>,
+}
+
+#[derive(Serialize, ToSchema)]
+struct WorkOrderCreated {
+    work_order_id: Uuid,
+}
+
+/// Наряд бригаде по объекту. Событие work_order_opened уходит в историю объекта (Kafka).
+#[utoipa::path(post, path = "/api/objects/{id}/work-orders", tag = "review", summary = "Отправить бригаду: открыть наряд по объекту",
+    params(("id" = String, Path)), request_body(content = Option<OpenWorkOrder>),
+    security(("bearer" = [])),
+    responses((status = 201, body = WorkOrderCreated), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody)))]
+async fn open_work_order(
+    State(s): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+    body: Option<Json<OpenWorkOrder>>,
+) -> Result<(StatusCode, Json<WorkOrderCreated>), ApiError> {
+    user.require(Perm::WorkOrdersManage)?;
+    let work_order_id = Uuid::now_v7();
+    let assignee = body.and_then(|b| b.0.assignee).map(|a| a.trim().chars().take(100).collect::<String>()).filter(|a| !a.is_empty());
+    let ev = ObjectEvent::WorkOrderOpened { work_order_id, assignee };
+    s.producer.send(topics::OBJECT_EVENTS, &Envelope::new(id, format!("api.{}", user.0.login), ev)).await?;
+    Ok((StatusCode::CREATED, Json(WorkOrderCreated { work_order_id })))
+}
+
+#[derive(Deserialize, ToSchema, Default)]
+struct CloseWorkOrder {
+    /// Фото «после» — `media_uri` из `POST /api/frames` (с object_id этого объекта)
+    after_photo_uri: Option<String>,
+}
+
+/// Бригада закрыла наряд: объект возвращается в «Норму» (правило проекции).
+#[utoipa::path(post, path = "/api/objects/{id}/work-orders/{wo}/close", tag = "review", summary = "Закрыть наряд (бригада), фото «после» по желанию",
+    params(("id" = String, Path), ("wo" = Uuid, Path)), request_body(content = Option<CloseWorkOrder>),
+    security(("bearer" = [])),
+    responses((status = 202, description = "Событие записано в Kafka"), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody)))]
+async fn close_work_order(
+    State(s): State<AppState>,
+    user: AuthUser,
+    Path((id, wo)): Path<(String, Uuid)>,
+    body: Option<Json<CloseWorkOrder>>,
+) -> Result<StatusCode, ApiError> {
+    if !(user.0.role.can(Perm::WorkOrdersOwn) || user.0.role.can(Perm::WorkOrdersManage)) {
+        return Err(ApiError::forbidden());
+    }
+    let after_photo_uri = body.and_then(|b| b.0.after_photo_uri).filter(|u| u.starts_with("/api/media/"));
+    let ev = ObjectEvent::WorkOrderClosed { work_order_id: wo, after_photo_uri };
+    s.producer.send(topics::OBJECT_EVENTS, &Envelope::new(id, format!("api.{}", user.0.login), ev)).await?;
     Ok(StatusCode::ACCEPTED)
 }
 

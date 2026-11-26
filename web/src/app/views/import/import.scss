@@ -1,0 +1,22 @@
+/* Only what the site's app.css has no class for: the run name field, the runs table. */
+.ux-importname {
+  width: min(360px, 100%);
+  margin-top: var(--space-3);
+  text-align: left;
+  cursor: auto;
+}
+.ux-linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ux-batchrow__actions { white-space: nowrap; text-align: right; }
+.ux-sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.ux-report > .ux-block__title { margin-top: var(--space-2); }

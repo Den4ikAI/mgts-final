@@ -28,8 +28,8 @@ use crate::{auth, datasets, files, frames, routes, AppState};
         auth::routes::login, auth::routes::refresh, auth::routes::logout, auth::routes::logout_all,
         auth::routes::me, auth::routes::stream_ticket, auth::routes::roles,
         auth::routes::list_users, auth::routes::create_user, auth::routes::update_user,
-        routes::list_objects, routes::get_object, routes::object_history, routes::stream,
-        routes::review_queue, routes::post_review,
+        routes::list_objects, routes::get_object, routes::object_history, routes::recent_events, routes::stream,
+        routes::review_queue, routes::post_review, routes::open_work_order, routes::close_work_order,
         routes::stats, files::quality, files::taxonomy,
         files::media,
         frames::upload, frames::list_frames, frames::get_frame,
@@ -92,11 +92,11 @@ mod tests {
             "/api/objects", "/api/objects/{id}", "/api/objects/{id}/history", "/api/objects/{id}/reviews",
             "/api/queue", "/api/stats", "/api/stream", "/api/dev/detections",
             "/api/media/{path}", "/api/quality", "/api/taxonomy", "/api/frames", "/api/frames/{id}",
-            "/api/datasets", "/api/datasets/{id}", "/api/frames/export",
+            "/api/datasets", "/api/datasets/{id}", "/api/frames/export", "/api/events", "/api/objects/{id}/work-orders", "/api/objects/{id}/work-orders/{wo}/close",
         ] {
             assert!(paths.iter().any(|x| x == p), "{p} missing from OpenAPI; have {paths:?}");
         }
-        assert_eq!(paths.len(), 26, "{paths:?}");
+        assert_eq!(paths.len(), 29, "{paths:?}");
         serde_json::to_string(&doc).unwrap();
     }
 }

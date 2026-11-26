@@ -1,0 +1,95 @@
+@if (!ready()) {
+  <div class="ux-page"><pp-loader text="Загружаем реестр" /></div>
+} @else if (empty()) {
+  <div class="ux-page">
+    <pp-empty icon="upload" title="Данные ещё не загружены" text="Датасет выключен, а своих загрузок нет. Загрузите фото или результаты прогона, либо снова включите датасет организаторов.">
+      <a class="pp-btn pp-btn--primary" routerLink="/import"><pp-icon name="upload" />Загрузить данные</a>
+    </pp-empty>
+  </div>
+} @else {
+  <div class="ux-page ux-page--wide">
+    <header class="ux-pagehead">
+      <div>
+        <h2 class="pp-h2">Реестр объектов</h2>
+        <p class="ux-pagehead__meta">Перечень ТКШ и РЩ по ID с состоянием и рекомендацией. Координат в датасете нет, поэтому их нет и здесь. Выгрузка — таблица результата с сервера: все объекты, вердикт модели, рекомендация и сверка с разметкой.</p>
+      </div>
+      <div class="ux-export" role="group" aria-label="Выгрузить перечень">
+        <button class="pp-btn pp-btn--primary" type="button" [disabled]="!!exporting()" (click)="exportTable('xlsx')">
+          <pp-icon name="upload" />Выгрузить перечень<span class="ux-btncount pp-mono">XLSX</span>
+        </button>
+        <button class="pp-btn pp-btn--secondary" type="button" [disabled]="!!exporting()" (click)="exportTable('csv')">
+          CSV
+        </button>
+      </div>
+    </header>
+
+    <div class="ux-toolbar">
+      <label class="pp-search ux-toolbar__search">
+        <svg class="pp-search__icon" aria-hidden="true"><use [attr.href]="icons + '#i-search'" /></svg>
+        <input class="pp-input" type="search" [value]="qInput()" (input)="onSearch($any($event.target).value)" placeholder="ID или дефект" aria-label="Поиск по реестру" />
+      </label>
+      @for (s of selects(); track s.name) {
+        <label class="ux-filter">
+          <span class="ux-filter__label">{{ s.label }}</span>
+          <span class="pp-select">
+            <select (change)="set(s.name, $any($event.target).value)">
+              @for (o of s.options; track o[0]) {
+                <option [value]="o[0]" [selected]="f()[s.name] === o[0]">{{ o[1] }}</option>
+              }
+            </select>
+            <svg class="pp-select__chevron" aria-hidden="true"><use [attr.href]="icons + '#i-chevron-down'" /></svg>
+          </span>
+        </label>
+      }
+      @if (active()) {
+        <button class="pp-btn pp-btn--ghost pp-btn--sm ux-toolbar__reset" type="button" (click)="reset()">Сбросить</button>
+      }
+    </div>
+
+    <p class="ux-count" aria-live="polite">{{ countText() }}</p>
+    <div class="pp-table-wrap ux-tablewrap">
+      <table class="pp-table ux-table ux-objects">
+        <thead>
+          <tr>
+            <th>ID</th><th>Тип</th><th>Статус</th><th>Дефект</th><th>Опасность</th><th>Разметка</th><th>Последний кадр</th>
+            <th class="pp-table__num ux-col-passes">Кадров</th><th class="ux-col-reco">Рекомендация</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of rows(); track o.id) {
+            <tr (click)="open(o.id, $event)" (keydown.enter)="open(o.id, $event)">
+              <td class="pp-table__main"><a class="pp-id ux-rowlink" [routerLink]="['/objects', o.id]">{{ o.id }}</a></td>
+              <td><span class="ux-kind"><pp-kind-icon [kind]="o.kind" />{{ o.kindLabel }}</span></td>
+              <td><pp-status [status]="o.displayStatus" [label]="o.displayStatusLabel" [sm]="true" /></td>
+              <td class="pp-table__main">
+                @if (o.severityRank) { {{ o.defectLabel }} } @else { <span class="pp-muted">{{ o.status === 'not_observed' ? 'нет данных' : 'нет' }}</span> }
+              </td>
+              <td>
+                @if (o.severityRank) { <pp-sev [sev]="o.maxSeverity" [label]="o.severityLabel" /> } @else { <span class="pp-muted">нет</span> }
+              </td>
+              <td>
+                @if (o.truth) {
+                  {{ o.truth.label }}@if (o.latest?.correct === false) { <span class="pp-muted"> ≠ модель</span> }
+                } @else {
+                  <span class="pp-muted">нет</span>
+                }
+              </td>
+              <td class="pp-mono">{{ fmt.dateTime(o.lastSeenAt) }}</td>
+              <td class="pp-table__num ux-col-passes">{{ o.passes }}</td>
+              <td class="ux-reco-cell ux-col-reco" [attr.title]="o.recommendation || ''">
+                @if (o.recommendation) { {{ o.recommendation }} } @else { <span class="pp-muted">нет</span> }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="9" class="ux-emptyrow">Под фильтр ничего не попало. Сбросьте фильтры или измените запрос.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="ux-more">
+      @if (more() > 0) {
+        <button class="pp-btn pp-btn--secondary" type="button" (click)="showMore()">Показать ещё {{ more() }}</button>
+      }
+    </div>
+  </div>
+}

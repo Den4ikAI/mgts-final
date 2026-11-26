@@ -1,59 +1,88 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { AuthService, ROLE_LABEL, Role, User } from '../../core/auth';
+import { PP, plural } from '../../ui/pp';
+import { Shell } from '../../ui/shell.service';
 
 /** Admin: create users, change role, disable. Changes end the user's sessions. */
 @Component({
   selector: 'app-users',
-  imports: [DatePipe],
+  imports: [DatePipe, ...PP],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1>Пользователи</h1>
-    <table>
-      <thead>
-        <tr><th class="mg-label">Логин</th><th class="mg-label">Имя</th><th class="mg-label">Роль</th>
-            <th class="mg-label">Последний вход</th><th class="mg-label">Доступ</th></tr>
-      </thead>
-      <tbody>
-        @for (u of users(); track u.id) {
-          <tr [class.off]="!u.active">
-            <td class="mg-data">{{ u.login }}</td>
-            <td>{{ u.display_name }}</td>
-            <td>
-              <select [disabled]="u.id === me()" (change)="patch(u, { role: $any($event.target).value })">
-                @for (r of roles; track r) { <option [value]="r" [selected]="r === u.role">{{ label[r] }}</option> }
-              </select>
-            </td>
-            <td class="mg-data">{{ u.last_login_at ? (u.last_login_at | date: 'dd.MM HH:mm') : '—' }}</td>
-            <td>
-              @if (u.id !== me()) {
-                <button class="mg-btn" (click)="patch(u, { active: !u.active })">{{ u.active ? 'Отключить' : 'Включить' }}</button>
-              }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <div class="ux-page ux-page--wide">
+      <header class="ux-pagehead">
+        <div>
+          <h2 class="pp-h2">Пользователи</h2>
+          <p class="ux-pagehead__meta">Учётные записи диспетчеров, руководителей и бригад. Смена роли или отключение завершает сессии пользователя.</p>
+        </div>
+      </header>
 
-    <form class="new" (submit)="create($event, login.value, name.value, role.value, pw.value); login.value = ''; pw.value = ''">
-      <h2>Новый пользователь</h2>
-      <input #login placeholder="логин" required />
-      <input #name placeholder="Имя, как в нарядах" required />
-      <select #role>@for (r of roles; track r) { <option [value]="r">{{ label[r] }}</option> }</select>
-      <input #pw type="password" placeholder="пароль, от 8 символов" autocomplete="new-password" required />
-      <button class="mg-btn mg-btn--primary">Создать</button>
-    </form>
-    @if (error()) { <p class="err" role="alert">{{ error() }}</p> }
+      @if (error()) {
+        <div class="ux-banner ux-banner--warn" role="alert"><pp-icon name="alert" cls="pp-icon--sm" /><span>{{ error() }}</span></div>
+      }
+
+      <p class="ux-count">{{ users().length }} {{ countWord() }} · активных {{ activeCount() }}</p>
+      <div class="pp-table-wrap ux-tablewrap">
+        <table class="pp-table ux-table">
+          <thead>
+            <tr><th>Логин</th><th>Имя</th><th>Роль</th><th>Последний вход</th><th>Доступ</th><th class="pp-table__num"></th></tr>
+          </thead>
+          <tbody>
+            @for (u of users(); track u.id) {
+              <tr [class.us-off]="!u.active">
+                <td class="pp-table__main"><span class="pp-id">{{ u.login }}</span>@if (u.id === me()) { <span class="pp-badge pp-badge--accent us-me">вы</span> }</td>
+                <td class="pp-table__main">{{ u.display_name }}</td>
+                <td>
+                  <span class="pp-select us-select">
+                    <select [disabled]="u.id === me()" [attr.aria-label]="'Роль ' + u.login" (change)="patch(u, { role: $any($event.target).value })">
+                      @for (r of roles; track r) { <option [value]="r" [selected]="r === u.role">{{ label[r] }}</option> }
+                    </select>
+                    <svg class="pp-select__chevron" aria-hidden="true"><use href="/brand/icons.svg#i-chevron-down" /></svg>
+                  </span>
+                </td>
+                <td class="pp-mono">{{ u.last_login_at ? (u.last_login_at | date: 'dd.MM HH:mm') : '—' }}</td>
+                <td>
+                  @if (u.active) { <span class="pp-badge pp-badge--accent">включён</span> } @else { <span class="pp-badge">отключён</span> }
+                </td>
+                <td class="pp-table__num">
+                  @if (u.id !== me()) {
+                    <button class="pp-btn pp-btn--sm" type="button" [class.pp-btn--ghost]="u.active" [class.pp-btn--secondary]="!u.active" (click)="patch(u, { active: !u.active })">{{ u.active ? 'Отключить' : 'Включить' }}</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="pp-muted">Загружаем пользователей…</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <section class="ux-panel">
+        <header class="ux-panel__head"><h3 class="ux-panel__title">Новый пользователь</h3><span class="ux-panel__meta">пароль от 8 символов</span></header>
+        <form class="us-new" (submit)="create($event, login.value, name.value, role.value, pw.value); login.value = ''; pw.value = ''">
+          <label class="pp-field"><span class="pp-field__label">Логин</span><input class="pp-input pp-input--mono" #login placeholder="логин" autocomplete="off" required /></label>
+          <label class="pp-field"><span class="pp-field__label">Имя</span><input class="pp-input" #name placeholder="Имя, как в нарядах" required /></label>
+          <label class="pp-field"><span class="pp-field__label">Роль</span>
+            <span class="pp-select">
+              <select #role>@for (r of roles; track r) { <option [value]="r">{{ label[r] }}</option> }</select>
+              <svg class="pp-select__chevron" aria-hidden="true"><use href="/brand/icons.svg#i-chevron-down" /></svg>
+            </span>
+          </label>
+          <label class="pp-field"><span class="pp-field__label">Пароль</span><input class="pp-input" #pw type="password" placeholder="от 8 символов" autocomplete="new-password" required /></label>
+          <button class="pp-btn pp-btn--primary"><pp-icon name="plus" />Создать</button>
+        </form>
+      </section>
+    </div>
   `,
   styles: `
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
-    tr.off td { color: var(--ink-muted); }
-    .new { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 24px; }
-    .new h2 { width: 100%; margin: 0; font-size: 17px; }
-    input, select { height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line);
-                    background: var(--surface-2); color: var(--ink); font: 14px var(--font-sans); }
-    .err { color: var(--status-defect); }
+    .us-off td, .us-off .pp-id { color: var(--text-muted); }
+    .us-me { margin-left: var(--space-2); }
+    .us-select { width: 180px; }
+    .us-select > select { height: var(--control-sm); }
+    .us-new { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: var(--space-3); align-items: end; }
+    @media (max-width: 900px) { .us-new { grid-template-columns: minmax(0, 1fr); } }
   `,
 })
 export class UsersPage {
@@ -64,8 +93,11 @@ export class UsersPage {
   readonly label = ROLE_LABEL;
   readonly users = signal<User[]>([]);
   readonly error = signal('');
+  readonly activeCount = computed(() => this.users().filter((u) => u.active).length);
+  readonly countWord = computed(() => plural(this.users().length, ['пользователь', 'пользователя', 'пользователей']));
 
   constructor() {
+    inject(Shell).setTitle('Пользователи');
     this.reload();
   }
 

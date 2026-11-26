@@ -1,0 +1,159 @@
+<div class="ux-page">
+  <header class="ux-pagehead">
+    <div>
+      <h2 class="pp-h2">Загрузить данные</h2>
+      <p class="ux-pagehead__meta">Тестовый набор на защите: перетащите zip-архив или папку с фото и таблицей разметки. Сервер разложит фото, найдёт разметку, модель проверит каждое фото и отправит кадры с дефектами в очередь.</p>
+    </div>
+  </header>
+
+  <section class="ux-panel ux-current">
+    <div class="ux-current__main"><span class="ux-current__label">Сейчас на сайте</span>
+      <span class="ux-current__kind">API стенда</span>
+      <span class="ux-current__meta">
+        @if (counts(); as c) {
+          {{ fmt.int(c.objects) }} {{ plural(c.objects, ['объект', 'объекта', 'объектов']) }} · {{ fmt.int(c.detections) }} {{ plural(c.detections, ['кадр', 'кадра', 'кадров']) }} в очереди и истории · ждут решения {{ fmt.int(c.pending) }}
+        } @else { загружаем… }
+      </span>
+    </div>
+    <div class="ux-current__actions">
+      <button class="pp-btn pp-btn--secondary" type="button" (click)="download(null, 'xlsx')" [attr.aria-busy]="downloading() === 'null:xlsx' ? 'true' : null"><span>Таблица по всем кадрам · XLSX</span></button>
+    </div>
+  </section>
+
+  <ol class="ux-steps">
+    <li><span class="ux-steps__n pp-mono">1</span><div><b>Фото</b><span>zip-архивом, папкой целиком или файлами: JPG, PNG, WEBP. Модель проверит каждое</span></div></li>
+    <li><span class="ux-steps__n pp-mono">2</span><div><b>Разметка, если есть</b><span>XLSX или CSV организаторов рядом с фото: сервер сам найдёт таблицу и склеит её с фото по имени файла</span></div></li>
+    <li><span class="ux-steps__n pp-mono">3</span><div><b>Результат</b><span>маршрут каждого кадра, качество против разметки и таблица для жюри в XLSX или CSV</span></div></li>
+  </ol>
+
+  <div class="ux-drop pp-corners" [class.is-over]="over()" [class.is-busy]="busy()" id="drop" tabindex="0" role="button" aria-label="Перетащите файлы или выберите их"
+    (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+    (keydown.enter)="$event.preventDefault(); pickFilesInput.click()" (keydown.space)="$event.preventDefault(); pickFilesInput.click()">
+    <div class="ux-drop__icon"><pp-icon name="upload" cls="pp-icon--xl" /></div>
+    <p class="ux-drop__title">Перетащите zip, папку с фото или файлы сюда</p>
+    <p class="ux-drop__text">Новые кадры добавляются к тем, что уже есть. Фото, которые модель уже видела, проверяются мгновенно и бесплатно.</p>
+    <div class="ux-drop__actions">
+      <label class="pp-btn pp-btn--primary"><pp-icon name="layers" />Выбрать папку<input type="file" id="pick-dir" webkitdirectory multiple hidden (change)="onPick($event)" /></label>
+      <label class="pp-btn pp-btn--secondary"><pp-icon name="plus" />Выбрать файлы<input #pickFilesInput type="file" id="pick-files" multiple hidden accept=".zip,.csv,.tsv,.txt,.xlsx,.xls,.xlsm,image/*" (change)="onPick($event)" /></label>
+    </div>
+    <label class="pp-field ux-importname" (click)="$event.stopPropagation()">
+      <span class="pp-field__label">Название прогона, необязательно</span>
+      <input class="pp-input" [value]="name()" (input)="name.set($any($event.target).value)" placeholder="например, тестовый набор жюри" autocomplete="off" />
+    </label>
+  </div>
+
+  <div id="report">
+    @switch (phase()) {
+      @case ('uploading') {
+        <section class="ux-panel" role="status">
+          <header class="ux-panel__head"><h3 class="ux-panel__title">Отправляем на сервер</h3>
+            <span class="ux-panel__meta pp-mono">{{ fmt.pct(share(), 0) }}@if (picked(); as p) { · {{ p.zips ? p.zips + ' zip' : p.files + ' ' + plural(p.files, ['файл', 'файла', 'файлов']) }} · {{ mb(p.bytes) }}}</span></header>
+          <div class="ux-progress"><span [style.--v]="share().toFixed(3)"></span></div>
+          <p class="ux-note">{{ share() >= 0.999 ? 'Файлы на сервере: распаковываем архив и ищем таблицу разметки.' : 'Загружаем файлы. Не закрывайте страницу.' }}</p>
+        </section>
+      }
+      @case ('analyzing') {
+        @let r = report();
+        <section class="ux-panel" role="status">
+          <header class="ux-panel__head"><h3 class="ux-panel__title">Модель проверяет фото</h3>
+            <span class="ux-panel__meta pp-mono">@if (r) { {{ fmt.int(r.batch.analyzed) }} из {{ fmt.int(r.batch.images) }}@if (r.batch.errors) { · ошибок {{ r.batch.errors }}} } @else { готовим… }</span></header>
+          <div class="ux-progress"><span [style.--v]="progress(r).toFixed(3)"></span></div>
+          <p class="ux-note">Фото проверяются на сервере параллельно, обычно 1–3 секунды на новое фото. Страницу можно закрыть: прогон продолжится, результат появится в списке прогонов ниже.
+            @if (imported(); as im) { Найдено фото: <span class="pp-mono">{{ im.images }}</span>, с разметкой: <span class="pp-mono">{{ im.labeled }}</span>. }</p>
+        </section>
+      }
+      @case ('error') {
+        <div class="ux-banner ux-banner--warn"><pp-icon name="alert" cls="pp-icon--sm" /><span><b>Данные не загрузились.</b> {{ error() }}</span></div>
+      }
+    }
+
+    @if (phase() === 'done' && report(); as r) {
+      @let rt = routes();
+      @let q = r.quality;
+      <section class="ux-panel ux-report" aria-label="Отчёт импорта">
+        <header class="ux-panel__head"><h3 class="ux-panel__title">{{ stalled() ? 'Проверено не всё' : 'Фото проверены моделью' }}</h3>
+          <span class="ux-panel__meta">{{ r.batch.name }} · {{ fmt.int(r.batch.analyzed) }} из {{ fmt.int(r.batch.images) }}@if (r.batch.errors) { · ошибок <span class="ux-hot">{{ r.batch.errors }}</span>}</span></header>
+        @if (stalled()) {
+          <div class="ux-banner ux-banner--warn"><pp-icon name="alert" cls="pp-icon--sm" /><span>Модель давно не присылает ответов: показано то, что готово. Прогон продолжится, когда воркеры снова заработают.</span></div>
+        }
+        <div class="ux-kpis ux-kpis--4 ux-kpis--compact">
+          <div class="ux-kpi"><span class="ux-kpi__label">В очередь</span><span class="ux-kpi__value">{{ fmt.int(rt.review) }}</span><span class="ux-kpi__sub">из них критичных {{ fmt.int(rt.critical) }}</span></div>
+          <div class="ux-kpi"><span class="ux-kpi__label">Норма без человека</span><span class="ux-kpi__value">{{ fmt.int(rt.auto) }}</span></div>
+          <div class="ux-kpi"><span class="ux-kpi__label">Не наблюдается</span><span class="ux-kpi__value">{{ fmt.int(rt.notObserved) }}</span></div>
+          <div class="ux-kpi"><span class="ux-kpi__label">Ошибки</span><span class="ux-kpi__value">{{ fmt.int(rt.errors) }}</span>@if (rt.queued) { <span class="ux-kpi__sub">ещё ждут ответа {{ fmt.int(rt.queued) }}</span> }</div>
+        </div>
+
+        @if (q) {
+          <h3 class="ux-block__title">Качество против разметки организаторов · {{ fmt.int(q.evaluated) }} {{ plural(q.evaluated, ['фото', 'фото', 'фото']) }}</h3>
+          <div class="ux-kpis ux-kpis--4 ux-kpis--compact">
+            <div class="ux-kpi"><span class="ux-kpi__label">Класс угадан</span><span class="ux-kpi__value">{{ fmt.pct(q.accuracy) }}</span><span class="ux-kpi__sub">главный класс модели = разметка</span></div>
+            <div class="ux-kpi"><span class="ux-kpi__label">Дефекты дошли до человека</span><span class="ux-kpi__value">{{ q.defects_caught }} из {{ q.defects_total }}</span><span class="ux-kpi__sub">{{ q.defect_recall == null ? 'дефектов в разметке нет' : fmt.pct(q.defect_recall) + ' дефектов в очереди' }}</span></div>
+            <div class="ux-kpi"><span class="ux-kpi__label">Закрыто без человека</span><span class="ux-kpi__value">{{ fmt.pct(q.auto_share) }}</span><span class="ux-kpi__sub">{{ q.auto_precision == null ? 'автонормы нет' : 'из них действительно норма ' + fmt.pct(q.auto_precision) }}</span></div>
+            <div class="ux-kpi"><span class="ux-kpi__label">Разметка</span><span class="ux-kpi__value">{{ fmt.int(r.batch.labeled) }}</span><span class="ux-kpi__sub">фото со строкой в таблице</span></div>
+          </div>
+          @if (confusion().length) {
+            <details class="ux-file">
+              <summary><span class="ux-file__name">Разметка → ответ модели</span><span class="pp-muted">{{ confusion().length }} {{ plural(confusion().length, ['пара', 'пары', 'пар']) }}</span></summary>
+              <div class="ux-scroll"><table class="pp-table pp-table--dense ux-table ux-mapping">
+                <thead><tr><th>Разметка</th><th>Модель</th><th class="pp-table__num">Фото</th></tr></thead>
+                <tbody>
+                  @for (c of confusion(); track c.truth + c.pred) {
+                    <tr><td>{{ c.truth }}</td><td [class.ux-hot]="!c.ok">{{ c.pred }}</td><td class="pp-mono pp-table__num">{{ c.n }}</td></tr>
+                  }
+                </tbody>
+              </table></div>
+            </details>
+          }
+        } @else {
+          <p class="ux-note">Таблицы разметки в данных не нашлось: качество против разметки не посчитать. Маршруты и таблица для жюри есть.</p>
+        }
+
+        @for (n of notes(); track n.key) {
+          <details class="ux-file" [open]="n.items.length <= 6">
+            <summary><span class="ux-file__name">{{ n.label }}</span><span class="pp-mono pp-muted">{{ n.items.length }}</span></summary>
+            <ul class="ux-msgs">
+              @for (m of n.items.slice(0, 40); track $index) { <li><pp-icon name="alert" cls="pp-icon--sm" /><span class="pp-mono ux-break">{{ m }}</span></li> }
+              @if (n.items.length > 40) { <li><span class="pp-muted">и ещё {{ n.items.length - 40 }}</span></li> }
+            </ul>
+          </details>
+        }
+
+        <div class="ux-report__actions">
+          <button class="pp-btn pp-btn--primary" type="button" (click)="download(r.batch.id, 'xlsx')" [attr.aria-busy]="downloading() === r.batch.id + ':xlsx' ? 'true' : null"><span>Скачать результат · XLSX</span></button>
+          <button class="pp-btn pp-btn--secondary" type="button" (click)="download(r.batch.id, 'csv')" [attr.aria-busy]="downloading() === r.batch.id + ':csv' ? 'true' : null"><span>CSV</span></button>
+          <a class="pp-btn pp-btn--secondary" routerLink="/queue"><pp-icon name="queue" />Очередь проверки</a>
+          <a class="pp-btn pp-btn--secondary" routerLink="/">Сводка</a>
+          <a class="pp-btn pp-btn--secondary" routerLink="/objects">Реестр</a>
+        </div>
+      </section>
+    }
+  </div>
+
+  <section class="ux-panel">
+    <header class="ux-panel__head"><h3 class="ux-panel__title">Прогоны</h3><span class="ux-panel__meta">загруженные наборы и таблицы результата</span></header>
+    @if (batches() === null) {
+      <pp-loader text="Загружаем прогоны" />
+    } @else if (!batches()!.length) {
+      <p class="ux-note">Наборов ещё не загружали.</p>
+    } @else {
+      <div class="ux-scroll"><table class="pp-table pp-table--dense ux-table">
+        <thead><tr><th>Название</th><th>Загружен</th><th class="pp-table__num">Фото</th><th class="pp-table__num">С разметкой</th><th>Проверено</th><th><span class="ux-sr">Таблица</span></th></tr></thead>
+        <tbody>
+          @for (b of batches(); track b.id) {
+            <tr>
+              <td class="pp-table__main"><button type="button" class="ux-linkbtn ux-link" (click)="show(b)">{{ b.name }}</button></td>
+              <td class="pp-mono">{{ fmt.dateTime(b.created_at) }}@if (b.uploaded_by) { <span class="pp-muted"> · {{ b.uploaded_by }}</span> }</td>
+              <td class="pp-mono pp-table__num">{{ fmt.int(b.images) }}</td>
+              <td class="pp-mono pp-table__num">{{ fmt.int(b.labeled) }}</td>
+              <td>@if (isDone(b)) { <span class="pp-mono">все</span>@if (b.errors) { <span class="ux-hot"> · ошибок {{ b.errors }}</span> } } @else { <span class="pp-mono">{{ fmt.int(b.analyzed) }} из {{ fmt.int(b.images) }}</span> }</td>
+              <td class="ux-batchrow__actions">
+                <button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" (click)="download(b.id, 'xlsx')" [attr.aria-busy]="downloading() === b.id + ':xlsx' ? 'true' : null"><span>XLSX</span></button>
+                <button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" (click)="download(b.id, 'csv')" [attr.aria-busy]="downloading() === b.id + ':csv' ? 'true' : null"><span>CSV</span></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table></div>
+    }
+  </section>
+</div>

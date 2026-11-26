@@ -1,0 +1,17 @@
+# Build context is the repo root (backend/Dockerfile, ml/Dockerfile): keep it small.
+**/node_modules
+**/target
+**/.venv
+**/.cache
+**/__pycache__
+**/.ipynb_checkpoints
+**/dist
+.git
+data
+dataset
+design
+design2
+mobile
+ml/runs
+.env
+openrouter_key.txt

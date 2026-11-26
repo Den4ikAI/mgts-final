@@ -1,0 +1,179 @@
+<div class="ux-page">
+  <header class="ux-pagehead">
+    <div>
+      <h2 class="pp-h2">Проверить фото</h2>
+      <p class="ux-pagehead__meta">Фото уходит на сервер, модель смотрит на него сейчас: ответ за 1–3 секунды, рамки вокруг каждого шкафа чуть позже.</p>
+    </div>
+  </header>
+
+  <div class="ux-checkpage">
+    <label class="ux-drop ux-drop--photo pp-corners" [class.is-over]="over()" [class.is-busy]="!!uploading()" id="drop"
+      (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+      <span class="ux-drop__icon"><pp-icon name="camera" cls="pp-icon--xl" /></span>
+      <span class="ux-drop__title">Перетащите фото или нажмите</span>
+      <span class="ux-drop__text">JPG, PNG, WEBP · можно несколько сразу</span>
+      <input type="file" accept="image/*,.heic,.heif" id="pick" multiple hidden (change)="onPick($event)" />
+    </label>
+
+    <div class="ux-check__side" aria-live="polite">
+      @if (uploading(); as u) {
+        <p class="ux-note" role="status">Отправляем {{ u.n }} {{ u.n === 1 ? 'фото' : 'фото' }} на сервер · <span class="pp-mono">{{ fmt.pct(u.share, 0) }}</span></p>
+        <div class="ux-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="(u.share * 100).toFixed(0)"><span [style.--v]="u.share.toFixed(3)"></span></div>
+      } @else if (error()) {
+        <div class="ux-banner ux-banner--warn"><pp-icon name="alert" cls="pp-icon--sm" /><span><b>Не получилось.</b> {{ error() }}</span></div>
+      } @else if (pending()) {
+        <p class="ux-note" role="status">Модель смотрит на {{ pending() === 1 ? 'кадр' : 'кадры' }}. Обычно это 1–3 секунды, рамки приходят через несколько секунд после ответа.</p>
+      } @else if (lastBatch() === 1 && cards()[0]?.d; as d) {
+        <div class="ux-banner ux-banner--info"><pp-icon name="check" cls="pp-icon--sm" />
+          <span>{{ d.isPending ? 'Кадр добавлен в очередь проверки.' : d.route === 'auto_ok' ? 'Уверенная норма: кадр закрыт без человека и сохранён в объекте.' : d.route === 'not_observed' ? 'Оборудование на кадре не видно, кадр сохранён.' : 'Кадр сохранён.' }}</span></div>
+      } @else if (lastBatch() > 1) {
+        <div class="ux-banner ux-banner--info"><pp-icon name="check" cls="pp-icon--sm" />
+          <span>Проверено {{ summary().done }} фото: в очередь {{ summary().review }}, норма {{ summary().auto }}, не наблюдается {{ summary().notObserved }}.</span></div>
+      } @else {
+        <ol class="ux-howto">
+          <li><span>Перетащите фото (JPG, PNG, WEBP, до 20 МБ) или сразу несколько.</span></li>
+          <li><span>Модель отвечает, видно ли оборудование, ТКШ это или РЩ, какое состояние и насколько срочно, и обводит рамкой каждый шкаф в кадре.</span></li>
+          <li><span>Кадр с дефектом сразу попадает в очередь проверки, критичный идёт в обход очереди.</span></li>
+        </ol>
+      }
+
+      <details class="ux-file">
+        <summary><span class="ux-file__name">Привязать к объекту</span><span class="pp-muted">необязательно</span>
+          @if (objectId().trim() || (lat().trim() && lon().trim())) { <span class="ux-badge-kind">задано</span> }</summary>
+        <div class="ux-checkmeta">
+          <label class="pp-field ux-checkmeta__id"><span class="pp-field__label">ID объекта</span>
+            <input class="pp-input pp-input--mono" [value]="objectId()" (input)="objectId.set($any($event.target).value)" placeholder="например, ТКШ-0042" autocomplete="off" spellcheck="false" /></label>
+          <label class="pp-field"><span class="pp-field__label">Широта</span>
+            <input class="pp-input pp-input--mono" [value]="lat()" (input)="lat.set($any($event.target).value)" inputmode="decimal" placeholder="55.75160" /></label>
+          <label class="pp-field"><span class="pp-field__label">Долгота</span>
+            <input class="pp-input pp-input--mono" [value]="lon()" (input)="lon.set($any($event.target).value)" inputmode="decimal" placeholder="37.71720" /></label>
+        </div>
+        <p class="ux-note">Без ID сервер сам сопоставит кадр с ближайшим объектом по координатам, если они есть.</p>
+      </details>
+    </div>
+  </div>
+
+  @if (lastBatch() > 1) {
+    @let s = summary();
+    <section class="ux-panel">
+      <header class="ux-panel__head"><h3 class="ux-panel__title">Пачка фото</h3><span class="ux-panel__meta pp-mono">{{ s.done }} / {{ s.total }}</span></header>
+      <div class="ux-progress" role="progressbar" aria-valuemin="0" [attr.aria-valuemax]="s.total" [attr.aria-valuenow]="s.done"><span [style.--v]="(s.done / (s.total || 1)).toFixed(3)"></span></div>
+      <div class="ux-kpis ux-kpis--4 ux-kpis--compact">
+        <div class="ux-kpi"><span class="ux-kpi__label">В очередь</span><span class="ux-kpi__value">{{ fmt.int(s.review) }}</span><span class="ux-kpi__sub">из них критичных {{ fmt.int(s.critical) }}</span></div>
+        <div class="ux-kpi"><span class="ux-kpi__label">Норма без человека</span><span class="ux-kpi__value">{{ fmt.int(s.auto) }}</span></div>
+        <div class="ux-kpi"><span class="ux-kpi__label">Не наблюдается</span><span class="ux-kpi__value">{{ fmt.int(s.notObserved) }}</span></div>
+        <div class="ux-kpi"><span class="ux-kpi__label">Рамки</span><span class="ux-kpi__value">{{ fmt.int(s.boxes) }}</span><span class="ux-kpi__sub">{{ s.errors ? 'ошибок ' + s.errors : 'кадров с рамками из ' + s.total }}</span></div>
+      </div>
+      @if (s.done === s.total && !pending()) {
+        <div class="ux-report__actions">
+          <a class="pp-btn pp-btn--primary" routerLink="/queue"><pp-icon name="queue" />Очередь проверки</a>
+          <a class="pp-btn pp-btn--secondary" routerLink="/objects">Реестр</a>
+        </div>
+      }
+    </section>
+  }
+
+  @for (c of cards(); track c.it.key) {
+    @let it = c.it;
+    @let d = c.d;
+    <section class="ux-panel ux-verdict" [class.is-pending]="!it.verdict">
+      <header class="ux-panel__head">
+        <h3 class="ux-panel__title">{{ it.verdict ? 'Ответ модели' : it.phase === 'error' ? 'Не проверено' : it.phase === 'uploading' ? 'Загружаем…' : 'Анализ…' }}</h3>
+        <span class="ux-panel__meta pp-mono">{{ it.file }}</span>
+      </header>
+      <div class="ux-verdict__grid">
+        <figure class="pp-detect ux-photo ux-photo--lg" [class.is-missing]="!it.src">
+          @if (it.src) { <img [src]="it.src" [alt]="c.label + ', ' + (it.objectId || it.file)" /> } @else { <div class="ux-nophoto"><pp-icon name="camera" cls="pp-icon--lg" /><span>Загружаем кадр</span></div> }
+          @if (!it.verdict) {
+            <span class="pp-detect__box ux-box-whole ux-scanbox"><span class="pp-detect__tag">{{ it.phase === 'error' ? 'Ошибка' : 'Анализ…' }}</span></span>
+          } @else if (c.boxes.length) {
+            @for (b of c.boxes; track $index) {
+              <span [class]="'pp-detect__box pp-detect__box--enter ' + b.tone + tagPos(b)"
+                [style.--x]="pct(b.x)" [style.--y]="pct(b.y)" [style.--w]="pct(b.w)" [style.--h]="pct(b.h)" [attr.title]="b.note">
+                <span class="pp-detect__tag">{{ b.label || c.label }}@if (b.conf != null) { · <b>{{ fmt.conf(b.conf) }}</b>}</span>
+              </span>
+            }
+          } @else {
+            <span [class]="'pp-detect__box ux-box-whole pp-detect__box--enter ' + c.tone" [class.ux-scanbox]="c.waitingBoxes">
+              <span class="pp-detect__tag">{{ c.label }} · <b>{{ fmt.conf(it.verdict.confidence) }}</b></span>
+            </span>
+          }
+          <figcaption class="pp-detect__caption">
+            <span>{{ it.objectId || 'Объект не сопоставлен' }}</span>
+            <span>{{ !it.verdict ? '' : c.waitingBoxes ? 'рамки считаются…' : c.boxes.length > 1 ? 'объектов в кадре: ' + c.boxes.length : c.boxes.length ? '' : 'рамка: весь кадр' }}{{ it.createdAt ? ' · ' + fmt.dateTime(it.createdAt) : '' }}</span>
+          </figcaption>
+        </figure>
+
+        <div>
+          @if (!it.verdict) {
+            @if (it.phase === 'error') {
+              <p class="ux-verdict__label">Не получилось</p>
+              <div class="ux-banner ux-banner--warn"><pp-icon name="alert" cls="pp-icon--sm" /><span>{{ it.error }}</span></div>
+            } @else {
+              <p class="ux-verdict__label ux-pending">Анализ…</p>
+              <p class="ux-note" role="status">{{ it.phase === 'uploading' ? 'Фото отправляется на сервер.' : 'Модель смотрит на кадр. Обычно это 1–3 секунды.' }}</p>
+              <div class="ux-skel"><span></span><span></span><span></span></div>
+            }
+          } @else {
+            <p class="ux-verdict__label">{{ c.label }}</p>
+            <p class="ux-verdict__route"><pp-icon name="arrow-right" cls="pp-icon--sm" />{{ d?.routeLabel }}</p>
+            @if (it.verdict.route === 'error') {
+              <div class="ux-banner ux-banner--warn"><pp-icon name="alert" cls="pp-icon--sm" /><span>{{ it.verdict.error || 'Модель не ответила' }}</span></div>
+            }
+            <dl class="ux-kv">
+              <dt>Объект</dt>
+              <dd>@if (it.objectId) { <a class="pp-id ux-link" [routerLink]="['/objects', it.objectId]">{{ it.objectId }}</a> } @else { нет }</dd>
+              <dt>Тип</dt><dd>{{ tax()?.kindLongLabel(d?.kind) }}</dd>
+              <dt>Опасность</dt><dd><pp-sev [sev]="d?.severity" [label]="d?.severityLabel" /></dd>
+              <dt>Уверенность</dt><dd><span class="pp-mono">{{ fmt.conf(d?.confidence ?? d?.topP) }}</span></dd>
+              <dt>Объектов в кадре</dt><dd>@if (c.waitingBoxes) { <span class="pp-muted">считаем…</span> } @else { <span class="pp-mono">{{ c.boxes.length }}</span> }</dd>
+              @if (latency(it.verdict.latency_ms); as l) { <dt>Ответ за</dt><dd><span class="pp-mono">{{ l }}</span></dd> }
+            </dl>
+            @if (d?.probs) {
+              <div class="ux-block"><h3 class="ux-block__title">Вероятности</h3><pp-probs [d]="d" /></div>
+            }
+            @if (d?.rationale) { <p class="ux-why__text">{{ d.rationale }}</p> }
+            @for (b of c.boxes; track $index) {
+              @if (b.note && c.boxes.length > 1) { <p class="ux-why__text">{{ b.label }}: {{ b.note }}</p> }
+            }
+            <p class="ux-reco">{{ d?.recommendation }}</p>
+            <div class="ux-report__actions">
+              @if (d?.isPending) {
+                <a class="pp-btn pp-btn--primary" routerLink="/queue"><pp-icon name="queue" />В очередь проверки</a>
+              } @else if (it.objectId) {
+                <a class="pp-btn pp-btn--secondary" [routerLink]="['/objects', it.objectId]">Открыть объект</a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+  @if (cards().length && !pending()) {
+    <div class="ux-report__actions"><button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" (click)="clear()">Убрать ответы со страницы</button></div>
+  }
+
+  <section class="ux-panel">
+    <header class="ux-panel__head"><h3 class="ux-panel__title">Мои последние загрузки</h3>
+      <span class="ux-panel__meta">{{ historyLoading() ? 'загружаем…' : historyCards().length ? 'нажмите, чтобы открыть ответ' : '' }}</span></header>
+    @if (historyLoading()) {
+      <pp-loader text="Загружаем ваши фото" />
+    } @else if (!historyCards().length) {
+      <p class="ux-note">Здесь появятся фото, которые вы проверили.</p>
+    } @else {
+      <ul class="ux-batch">
+        @for (h of historyAll() ? historyCards() : historyCards().slice(0, 16); track h.it.key) {
+          <li>
+            <button type="button" class="ux-batch__item ux-histitem" (click)="open(h.it)">
+              <pp-thumb [d]="h.d" />
+              <span><b>{{ pickLabel(h.it) }}</b><span class="ux-batch__name">{{ h.it.file }} · {{ h.it.verdict ? routeLabel(h.it.verdict.route) : 'ждёт ответа' }}</span></span>
+            </button>
+          </li>
+        }
+      </ul>
+      @if (!historyAll() && historyCards().length > 16) {
+        <div class="ux-report__actions"><button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" (click)="historyAll.set(true)">Показать все {{ historyCards().length }}</button></div>
+      }
+    }
+  </section>
+</div>

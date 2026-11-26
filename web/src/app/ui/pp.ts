@@ -128,8 +128,10 @@ class PhotoState {
   readonly loaded = signal(false);
   readonly failed = signal(false);
   constructor(store: PoputnoStore, uri: () => string | null | undefined) {
+    // computed: re-run only when the URI itself changes, not on every update of the detection
+    const src = computed(uri);
     effect(() => {
-      const u = uri();
+      const u = src();
       this.url.set(null);
       this.loaded.set(false);
       this.failed.set(!u);

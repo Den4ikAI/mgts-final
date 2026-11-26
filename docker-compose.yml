@@ -1,4 +1,5 @@
-# Local stack: Kafka (Redpanda, Kafka API compatible), Kafka UI, Postgres, S3 (SeaweedFS), API.
+# Local stack: Kafka (Redpanda, Kafka API compatible), Kafka UI, Postgres, S3 (SeaweedFS), API + UI, ML workers.
+#   OPENROUTER_API_KEY in .env (repo root) for the ML workers; UI at http://localhost:8080
 #   docker compose up -d redpanda console postgres s3 topics   # infra only, run api/web locally
 #   docker compose up -d --build                     # everything
 services:
@@ -62,7 +63,7 @@ services:
       retries: 30
 
   api:
-    build: ./backend
+    build: { context: ., dockerfile: backend/Dockerfile }
     environment:
       DATABASE_URL: postgres://mgts:mgts@postgres:5432/mgts
       KAFKA_BROKERS: redpanda:9092
@@ -91,6 +92,39 @@ services:
       postgres: { condition: service_healthy }
       topics: { condition: service_completed_successfully }
       s3: { condition: service_healthy }
+
+  # ML: verdict for every uploaded photo (Gemini Decision) → frames.analyzed + detections.created
+  ml:
+    build: { context: ., dockerfile: ml/Dockerfile }
+    env_file: [{ path: .env, required: false }]
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      S3_ENDPOINT: http://s3:8333
+      S3_ACCESS_KEY: mgts
+      S3_SECRET_KEY: mgts-secret
+    volumes:
+      - ./ml/.cache:/app/.cache          # model answers by photo hash: re-runs cost nothing
+    depends_on:
+      topics: { condition: service_completed_successfully }
+      s3: { condition: service_healthy }
+    restart: unless-stopped
+
+  # ML, second stage: every cabinet/board in the frame with a box (Gemini 4 Hydrogen) → frames.objects
+  ml-boxes:
+    build: { context: ., dockerfile: ml/Dockerfile }
+    command: ["python", "boxes.py"]
+    env_file: [{ path: .env, required: false }]
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      S3_ENDPOINT: http://s3:8333
+      S3_ACCESS_KEY: mgts
+      S3_SECRET_KEY: mgts-secret
+    volumes:
+      - ./ml/.cache:/app/.cache
+    depends_on:
+      topics: { condition: service_completed_successfully }
+      s3: { condition: service_healthy }
+    restart: unless-stopped
 
 volumes:
   pgdata:
