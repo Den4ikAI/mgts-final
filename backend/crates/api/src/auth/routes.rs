@@ -7,11 +7,12 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::{password, tokens, AuthUser, Perm, Role, TokenKind, UserIdentity};
 use crate::{
-    error::{ApiError, ApiResult},
+    error::{ApiError, ApiResult, ErrorBody},
     AppState,
 };
 
@@ -34,18 +35,19 @@ pub fn router() -> Router<AppState> {
         .route("/api/users/{id}", patch(update_user))
 }
 
-#[derive(Serialize, sqlx::FromRow)]
+#[derive(Serialize, sqlx::FromRow, ToSchema)]
 pub struct UserRow {
     id: Uuid,
     login: String,
     display_name: String,
+    #[schema(value_type = Role)]
     role: String,
     active: bool,
     created_at: DateTime<Utc>,
     last_login_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct UserView {
     #[serde(flatten)]
     user: UserRow,
@@ -59,9 +61,11 @@ impl From<UserRow> for UserView {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct TokenResponse {
+    /// JWT для заголовка `Authorization: Bearer …`
     access_token: String,
+    #[schema(value_type = String, example = "Bearer")]
     token_type: &'static str,
     /// Seconds until the access token expires.
     expires_in: u64,
@@ -208,12 +212,18 @@ async fn token_response(
     })
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 struct LoginBody {
+    #[schema(example = "dispatcher")]
     login: String,
+    #[schema(example = "mgts-demo")]
     password: String,
 }
 
+/// Вход по логину и паролю. Отдаёт access token (15 мин) и ставит HttpOnly-cookie
+/// `mgts_refresh` для `/api/auth/refresh`.
+#[utoipa::path(post, path = "/api/auth/login", tag = "auth", request_body = LoginBody,
+    responses((status = 200, body = TokenResponse), (status = 401, description = "Неверный логин или пароль", body = ErrorBody)))]
 async fn login(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -256,8 +266,9 @@ async fn login(
     Ok((jar.add(refresh_cookie(&s, refresh)), Json(token_response(&s, &who).await?)))
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, ToSchema)]
 struct RefreshBody {
+    /// Для скриптов; браузер шлёт cookie `mgts_refresh`
     refresh_token: Option<String>,
 }
 
@@ -282,6 +293,8 @@ async fn revoke_family(db: impl sqlx::PgExecutor<'_>, family: Uuid) -> Result<()
 
 /// Rotates the refresh token and returns a fresh access token.
 /// The body is optional: browsers rely on the cookie.
+#[utoipa::path(post, summary = "Новый access token по refresh (cookie или тело); refresh ротируется", path = "/api/auth/refresh", tag = "auth", request_body(content = Option<RefreshBody>),
+    responses((status = 200, body = TokenResponse), (status = 401, body = ErrorBody)))]
 async fn refresh(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -365,6 +378,8 @@ async fn rotate(
 }
 
 /// Ends this session (the refresh-token family). The access token simply expires.
+#[utoipa::path(post, summary = "Выход: завершить эту сессию", path = "/api/auth/logout", tag = "auth", request_body(content = Option<RefreshBody>),
+    responses((status = 204, description = "Сессия завершена")))]
 async fn logout(
     State(s): State<AppState>,
     jar: CookieJar,
@@ -384,6 +399,8 @@ async fn logout(
 }
 
 /// Ends every session of the caller (all devices).
+#[utoipa::path(post, summary = "Выход на всех устройствах", path = "/api/auth/logout-all", tag = "auth", security(("bearer" = [])),
+    responses((status = 204, description = "Все сессии завершены"), (status = 401, body = ErrorBody)))]
 async fn logout_all(
     State(s): State<AppState>,
     user: AuthUser,
@@ -401,17 +418,22 @@ async fn revoke_user_sessions(db: &sqlx::PgPool, user_id: Uuid) -> Result<(), Ap
     Ok(())
 }
 
+/// Текущий пользователь и его права.
+#[utoipa::path(get, path = "/api/auth/me", tag = "auth", security(("bearer" = [])),
+    responses((status = 200, body = UserView), (status = 401, body = ErrorBody)))]
 async fn me(State(s): State<AppState>, user: AuthUser) -> ApiResult<UserView> {
     Ok(Json(user_view(&s.db, user.id()).await?))
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct Ticket {
     ticket: String,
     expires_in: u64,
 }
 
 /// Short-lived token for `GET /api/stream?ticket=…` (EventSource cannot set headers).
+#[utoipa::path(post, summary = "Билет на 60 с для live-потока /api/stream", path = "/api/auth/stream-ticket", tag = "auth", security(("bearer" = [])),
+    responses((status = 200, body = Ticket), (status = 401, body = ErrorBody)))]
 async fn stream_ticket(State(s): State<AppState>, user: AuthUser) -> ApiResult<Ticket> {
     user.require(Perm::ObjectsRead)?;
     let who = UserIdentity {
@@ -424,13 +446,15 @@ async fn stream_ticket(State(s): State<AppState>, user: AuthUser) -> ApiResult<T
     Ok(Json(Ticket { ticket, expires_in: ttl.as_secs() }))
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct RoleInfo {
     role: Role,
     permissions: Vec<Perm>,
 }
 
 /// The role → permission matrix, for the admin UI.
+#[utoipa::path(get, summary = "Роли и их права", path = "/api/auth/roles", tag = "auth", security(("bearer" = [])),
+    responses((status = 200, body = Vec<RoleInfo>), (status = 401, body = ErrorBody)))]
 async fn roles(user: AuthUser) -> ApiResult<Vec<RoleInfo>> {
     user.require(Perm::UsersManage)?;
     Ok(Json(
@@ -438,6 +462,9 @@ async fn roles(user: AuthUser) -> ApiResult<Vec<RoleInfo>> {
     ))
 }
 
+/// Все пользователи (нужно право users_manage).
+#[utoipa::path(get, path = "/api/users", tag = "users", security(("bearer" = [])),
+    responses((status = 200, body = Vec<UserView>), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody)))]
 async fn list_users(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<UserView>> {
     user.require(Perm::UsersManage)?;
     let rows = sqlx::query_as::<_, UserRow>(
@@ -449,7 +476,7 @@ async fn list_users(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<
     Ok(Json(rows.into_iter().map(Into::into).collect()))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 struct CreateUser {
     login: String,
     display_name: String,
@@ -457,6 +484,9 @@ struct CreateUser {
     password: String,
 }
 
+#[utoipa::path(post, summary = "Создать пользователя", path = "/api/users", tag = "users", request_body = CreateUser, security(("bearer" = [])),
+    responses((status = 201, body = UserView), (status = 400, body = ErrorBody), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody),
+              (status = 409, description = "Логин занят", body = ErrorBody)))]
 async fn create_user(
     State(s): State<AppState>,
     user: AuthUser,
@@ -468,7 +498,7 @@ async fn create_user(
     Ok((StatusCode::CREATED, Json(row.into())))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 struct UpdateUser {
     display_name: Option<String>,
     role: Option<Role>,
@@ -478,6 +508,8 @@ struct UpdateUser {
 
 /// Role, activity or password changes end the user's sessions; the current
 /// access token stays valid until it expires (≤ ACCESS_TTL_SECS).
+#[utoipa::path(patch, summary = "Изменить пользователя; смена роли, пароля или блокировка завершают его сессии", path = "/api/users/{id}", tag = "users", params(("id" = Uuid, Path)), request_body = UpdateUser, security(("bearer" = [])),
+    responses((status = 200, body = UserView), (status = 400, body = ErrorBody), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody), (status = 404, body = ErrorBody)))]
 async fn update_user(
     State(s): State<AppState>,
     user: AuthUser,

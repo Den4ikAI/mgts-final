@@ -17,10 +17,11 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::{
     auth::{AuthUser, Perm},
-    error::ApiError,
+    error::{ApiError, ErrorBody},
     AppState,
 };
 
@@ -70,6 +71,10 @@ fn content_type(p: &Path) -> &'static str {
     }
 }
 
+/// Фото из датасета (`MEDIA_ROOT`). Путь — как в `crop_uri` после `/api/media/`.
+#[utoipa::path(get, path = "/api/media/{path}", tag = "files", params(("path" = String, Path, example = "МП. ТКШ/26224137.jpg")), security(("bearer" = [])),
+    responses((status = 200, description = "Картинка", content_type = "image/*", body = Vec<u8>),
+              (status = 400, body = ErrorBody), (status = 401, body = ErrorBody), (status = 404, body = ErrorBody)))]
 async fn media(
     State(s): State<AppState>,
     user: AuthUser,
@@ -91,23 +96,30 @@ async fn media(
     Ok(res)
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
 struct QualityQuery {
+    /// id прогона; по умолчанию самый свежий
     run: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct RunInfo {
     run_id: String,
     modified: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct Quality {
     runs: Vec<RunInfo>,
+    /// report.json из ml/evaluate.py
+    #[schema(value_type = Option<Object>)]
     report: Option<Value>,
 }
 
+/// Отчёт о качестве модели против разметки организаторов.
+#[utoipa::path(get, path = "/api/quality", tag = "stats", params(QualityQuery), security(("bearer" = [])),
+    responses((status = 200, body = Quality), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody)))]
 async fn quality(
     State(s): State<AppState>,
     user: AuthUser,
@@ -141,6 +153,8 @@ async fn quality(
 }
 
 /// Class keys → Russian labels etc., straight from ml/taxonomy.json (single source).
+#[utoipa::path(get, summary = "Классы дефектов и типы объектов (ml/taxonomy.json)", path = "/api/taxonomy", tag = "stats", security(("bearer" = [])),
+    responses((status = 200, description = "ml/taxonomy.json как есть", body = Object), (status = 401, body = ErrorBody)))]
 async fn taxonomy(State(s): State<AppState>, user: AuthUser) -> Result<Json<Value>, ApiError> {
     user.require(Perm::ObjectsRead)?;
     let text = tokio::fs::read_to_string(&s.files.taxonomy)

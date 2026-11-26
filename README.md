@@ -54,6 +54,8 @@ curl -XPOST localhost:8080/api/dev/detections -H "Authorization: Bearer $TOKEN" 
 
 ## API
 
+Swagger UI: **http://localhost:8080/api/docs**, схема OpenAPI 3.1: `/api/openapi.json`. Схема генерируется из кода обработчиков (utoipa), тест `openapi::tests` падает, если маршрут не описан. Войти: `POST /api/auth/login` (`dispatcher` / `mgts-demo`), вставить `access_token` в **Authorize**.
+
 Всё под `/api`, кроме входа, требует `Authorization: Bearer <access_token>`. Подробно: [`docs/auth.md`](docs/auth.md).
 
 | Метод | Путь | Что | Право |

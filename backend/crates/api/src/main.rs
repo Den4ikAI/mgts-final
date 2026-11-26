@@ -2,6 +2,7 @@ mod auth;
 mod error;
 mod files;
 mod kafka;
+mod openapi;
 mod projection;
 mod routes;
 

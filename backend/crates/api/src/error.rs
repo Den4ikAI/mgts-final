@@ -66,4 +66,11 @@ impl IntoResponse for ApiError {
     }
 }
 
+/// Тело любой ошибки API.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct ErrorBody {
+    #[schema(example = "forbidden")]
+    pub error: String,
+}
+
 pub type ApiResult<T> = Result<Json<T>, ApiError>;

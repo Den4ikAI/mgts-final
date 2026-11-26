@@ -12,6 +12,7 @@ use futures::Stream;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio_stream::{wrappers::BroadcastStream, StreamExt};
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
 use domain::{
@@ -21,13 +22,13 @@ use domain::{
 
 use crate::{
     auth::{AuthUser, Perm, TokenKind},
-    error::{ApiError, ApiResult},
+    error::{ApiError, ApiResult, ErrorBody},
     AppState,
 };
 
 pub fn router(state: AppState) -> Router {
     Router::new()
-        .route("/health", get(|| async { "ok" }))
+        .route("/health", get(health))
         .route("/api/objects", get(list_objects))
         .route("/api/objects/{id}", get(get_object))
         .route("/api/objects/{id}/history", get(object_history))
@@ -38,25 +39,41 @@ pub fn router(state: AppState) -> Router {
         .route("/api/dev/detections", post(dev_inject_detection))
         .merge(crate::auth::routes::router())
         .merge(crate::files::router())
+        .merge(crate::openapi::router())
         .with_state(state)
 }
 
 
-#[derive(Serialize, sqlx::FromRow)]
+/// Liveness probe.
+#[utoipa::path(get, path = "/health", tag = "system", responses((status = 200, description = "Сервис жив", body = String, example = "ok")))]
+pub async fn health() -> &'static str {
+    "ok"
+}
+
+/// Объект инфраструктуры (ТКШ, РЩ, …) и его текущий статус — read model из Kafka.
+#[derive(Serialize, sqlx::FromRow, ToSchema)]
 pub struct ObjectRow {
+    #[schema(example = "ТКШ-26224137")]
     id: String,
+    /// Тип объекта, ключ из таксономии: tksh | rsh | …
+    #[schema(example = "tksh")]
     kind: String,
     lat: Option<f64>,
     lon: Option<f64>,
     address: Option<String>,
+    /// ok | suspected | defect | not_observed
+    #[schema(example = "suspected")]
     status: String,
+    /// Ключ класса из таксономии, например `deformation`
     last_defect_type: Option<String>,
+    /// low | medium | high | critical
     max_severity: Option<String>,
     last_seen_at: Option<DateTime<Utc>>,
     updated_at: DateTime<Utc>,
 }
 
-#[derive(Serialize, sqlx::FromRow)]
+/// Одно срабатывание модели по кадру.
+#[derive(Serialize, sqlx::FromRow, ToSchema)]
 pub struct DetectionRow {
     id: Uuid,
     frame_id: Uuid,
@@ -65,32 +82,46 @@ pub struct DetectionRow {
     defect_type: Option<String>,
     severity: Option<String>,
     confidence: f32,
+    #[schema(value_type = domain::BBox)]
     bbox: Value,
+    /// Ссылка на фото: `/api/media/<путь>`
     crop_uri: Option<String>,
+    /// Пояснение модели для карточки
     rationale: Option<String>,
     lat: Option<f64>,
     lon: Option<f64>,
+    /// pending | confirmed | rejected | need_recapture | auto
     review_state: String,
     created_at: DateTime<Utc>,
 }
 
-#[derive(Serialize, sqlx::FromRow)]
+/// Событие из истории объекта (топик `object.events`).
+#[derive(Serialize, sqlx::FromRow, ToSchema)]
 pub struct EventRow {
     event_id: Uuid,
     #[sqlx(rename = "type")]
     #[serde(rename = "type")]
+    #[schema(example = "observed")]
     kind: String,
+    #[schema(value_type = Object)]
     payload: Value,
     source: String,
     occurred_at: DateTime<Utc>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
 struct ObjectFilter {
+    /// ok | suspected | defect | not_observed
     status: Option<String>,
+    /// tksh | rsh | …
     kind: Option<String>,
 }
 
+/// Реестр объектов, свежие сверху.
+#[utoipa::path(get, path = "/api/objects", tag = "objects", params(ObjectFilter),
+    security(("bearer" = [])),
+    responses((status = 200, body = Vec<ObjectRow>), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody)))]
 async fn list_objects(
     State(s): State<AppState>,
     user: AuthUser,
@@ -109,12 +140,16 @@ async fn list_objects(
     Ok(Json(rows))
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct ObjectDetails {
     object: ObjectRow,
     detections: Vec<DetectionRow>,
 }
 
+/// Объект и его последние 50 срабатываний.
+#[utoipa::path(get, path = "/api/objects/{id}", tag = "objects", params(("id" = String, Path, example = "ТКШ-26224137")),
+    security(("bearer" = [])),
+    responses((status = 200, body = ObjectDetails), (status = 401, body = ErrorBody), (status = 404, body = ErrorBody)))]
 async fn get_object(
     State(s): State<AppState>,
     user: AuthUser,
@@ -135,6 +170,10 @@ async fn get_object(
     Ok(Json(ObjectDetails { object, detections }))
 }
 
+/// Полная история объекта — event log из Kafka.
+#[utoipa::path(get, path = "/api/objects/{id}/history", tag = "objects", params(("id" = String, Path)),
+    security(("bearer" = [])),
+    responses((status = 200, body = Vec<EventRow>), (status = 401, body = ErrorBody)))]
 async fn object_history(
     State(s): State<AppState>,
     user: AuthUser,
@@ -151,7 +190,10 @@ async fn object_history(
     Ok(Json(rows))
 }
 
-/// Pending detections, critical first. One row per detection; the UI groups by object.
+/// Очередь разбора: ожидающие срабатывания, критичные первыми.
+#[utoipa::path(get, path = "/api/queue", tag = "review",
+    security(("bearer" = [])),
+    responses((status = 200, body = Vec<DetectionRow>), (status = 401, body = ErrorBody)))]
 async fn review_queue(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<DetectionRow>> {
     user.require(Perm::ObjectsRead)?;
     let rows = sqlx::query_as::<_, DetectionRow>(
@@ -166,12 +208,16 @@ async fn review_queue(State(s): State<AppState>, user: AuthUser) -> ApiResult<Ve
     Ok(Json(rows))
 }
 
-#[derive(Serialize, sqlx::FromRow)]
+#[derive(Serialize, sqlx::FromRow, ToSchema)]
 struct StatusCount {
     status: String,
     count: i64,
 }
 
+/// Сколько объектов в каждом статусе.
+#[utoipa::path(get, path = "/api/stats", tag = "stats",
+    security(("bearer" = [])),
+    responses((status = 200, body = Vec<StatusCount>), (status = 401, body = ErrorBody), (status = 403, body = ErrorBody)))]
 async fn stats(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<StatusCount>> {
     user.require(Perm::StatsRead)?;
     let rows = sqlx::query_as::<_, StatusCount>(
@@ -182,7 +228,7 @@ async fn stats(State(s): State<AppState>, user: AuthUser) -> ApiResult<Vec<Statu
     Ok(Json(rows))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 struct ReviewRequest {
     detection_id: Option<Uuid>,
     decision: ReviewDecision,
@@ -193,6 +239,11 @@ struct ReviewRequest {
 /// Reviews are written to Kafka, not the DB: the projection applies them, so
 /// the event log stays the single source of truth.
 /// The reviewer is taken from the token, never from the body.
+#[utoipa::path(post, summary = "Решение диспетчера по срабатыванию: подтвердить, ложное, нужен кадр", path = "/api/objects/{id}/reviews", tag = "review", params(("id" = String, Path)),
+    request_body = ReviewRequest,
+    security(("bearer" = [])),
+    responses((status = 202, description = "Решение записано в Kafka, проекция применит его"),
+               (status = 401, body = ErrorBody), (status = 403, body = ErrorBody)))]
 async fn post_review(
     State(s): State<AppState>,
     user: AuthUser,
@@ -213,13 +264,18 @@ async fn post_review(
     Ok(StatusCode::ACCEPTED)
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
 struct StreamQuery {
+    /// Из `POST /api/auth/stream-ticket`
     ticket: String,
 }
 
 /// Live object events as Server-Sent Events. Auth: `?ticket=` from
 /// `POST /api/auth/stream-ticket`, since EventSource cannot send headers.
+#[utoipa::path(get, summary = "Live-поток событий объектов (SSE), авторизация через ?ticket=", path = "/api/stream", tag = "objects", params(StreamQuery),
+    responses((status = 200, description = "text/event-stream: JSON событий объектов", content_type = "text/event-stream", body = String),
+              (status = 401, body = ErrorBody)))]
 async fn stream(
     State(s): State<AppState>,
     Query(q): Query<StreamQuery>,
@@ -233,7 +289,7 @@ async fn stream(
     Ok(Sse::new(events).keep_alive(KeepAlive::default()))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 struct DevDetection {
     object_id: String,
     #[serde(default = "default_kind")]
@@ -248,7 +304,7 @@ struct DevDetection {
     rationale: Option<String>,
 }
 fn default_kind() -> ObjectKind {
-    ObjectKind::CableWell
+    ObjectKind::Tksh
 }
 fn default_conf() -> f32 {
     0.9
@@ -256,6 +312,9 @@ fn default_conf() -> f32 {
 
 /// Dev/demo only: publish a synthetic detection so the UI can be built and
 /// demoed without the ML worker. Disable with DEV_ENDPOINTS=0.
+#[utoipa::path(post, summary = "Демо: синтетическое срабатывание в Kafka (DEV_ENDPOINTS=0 отключает)", path = "/api/dev/detections", tag = "dev", request_body = DevDetection,
+    security(("bearer" = [])),
+    responses((status = 200, description = "id срабатывания", body = Uuid), (status = 403, body = ErrorBody), (status = 404, body = ErrorBody)))]
 async fn dev_inject_detection(
     State(s): State<AppState>,
     user: AuthUser,

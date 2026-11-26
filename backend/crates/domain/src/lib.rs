@@ -16,9 +16,13 @@ pub mod topics {
     pub const OBJECT_EVENTS: &str = "object.events";
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectKind {
+    /// Телекоммуникационный климатический шкаф
+    Tksh,
+    /// Распределительный щит
+    Rsh,
     /// Кабельный колодец
     CableWell,
     /// Опора двойного назначения
@@ -27,7 +31,7 @@ pub enum ObjectKind {
 
 /// Three states, not two: "not observed" is an honest answer when a well
 /// is under snow or blocked by a parked car.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectStatus {
     Ok,
@@ -36,7 +40,7 @@ pub enum ObjectStatus {
     NotObserved,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Severity {
     Low,
@@ -46,14 +50,14 @@ pub enum Severity {
     Critical,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct GeoPoint {
     pub lat: f64,
     pub lon: f64,
 }
 
 /// Normalized bbox in [0, 1] frame coordinates.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct BBox {
     pub x: f32,
     pub y: f32,
@@ -61,7 +65,7 @@ pub struct BBox {
     pub h: f32,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReviewDecision {
     Confirm,
@@ -70,7 +74,7 @@ pub enum ReviewDecision {
 }
 
 /// Why a reviewer rejected a detection. Doubles as labels for retraining.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RejectReason {
     Shadow,
