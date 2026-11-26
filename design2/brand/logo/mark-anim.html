@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Знак в движении · Попутно</title>
+<!-- Сниппет анимации знака. Копировать: SVG ниже + классы .pp-mark-anim из components.css.
+     Порядок: маршрут прорисовывается слева направо (машина едет) → уголки защёлкиваются
+     из 1.15 → точка загорается циановым. --dur-mark 900 мс. Последний кадр = статичный знак.
+     Перезапуск: replay(el). Загрузчик: добавить .pp-mark-anim--loop. -->
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  body { min-height: 100vh; display: grid; place-items: center; gap: var(--space-8); align-content: center; }
+  .row { display: flex; align-items: center; gap: var(--space-6); }
+</style>
+</head>
+<body class="pp-page">
+  <svg class="pp-mark pp-mark-anim" viewBox="0 0 64 64" width="128" height="128" role="img" aria-label="Попутно"><g class="pp-mark__route" fill="#0A84E6"><path class="pp-mark__route-l" d="M3 29H21V35H0Z"/><path class="pp-mark__route-r" d="M43 29H64L61 35H43Z"/></g><g class="pp-mark__frame" fill="#0A84E6"><path class="pp-mark__c pp-mark__c--tl" d="M8 25V10A2 2 0 0 1 10 8H25V14H14V25Z"/><path class="pp-mark__c pp-mark__c--tr" d="M39 8H54A2 2 0 0 1 56 10V25H50V14H39Z"/><path class="pp-mark__c pp-mark__c--br" d="M56 39V54A2 2 0 0 1 54 56H39V50H50V39Z"/><path class="pp-mark__c pp-mark__c--bl" d="M25 56H10A2 2 0 0 1 8 54V39H14V50H25Z"/></g><circle class="pp-mark__dot" cx="32" cy="32" r="8" fill="#2ADCF0"/></svg>
+  <div class="row">
+    <button class="pp-btn pp-btn--secondary pp-btn--sm" type="button" onclick="replay(document.querySelector('.pp-mark-anim:not(.pp-mark-anim--loop)'))">Повторить</button>
+    <span class="row pp-caption pp-secondary" style="gap:var(--space-3)"><svg class="pp-mark pp-mark-anim pp-mark-anim--loop" viewBox="0 0 64 64" width="40" height="40" role="img" aria-label="Загружаем"><g class="pp-mark__route" fill="#0A84E6"><path class="pp-mark__route-l" d="M3 29H21V35H0Z"/><path class="pp-mark__route-r" d="M43 29H64L61 35H43Z"/></g><g class="pp-mark__frame" fill="#0A84E6"><path class="pp-mark__c pp-mark__c--tl" d="M8 25V10A2 2 0 0 1 10 8H25V14H14V25Z"/><path class="pp-mark__c pp-mark__c--tr" d="M39 8H54A2 2 0 0 1 56 10V25H50V14H39Z"/><path class="pp-mark__c pp-mark__c--br" d="M56 39V54A2 2 0 0 1 54 56H39V50H50V39Z"/><path class="pp-mark__c pp-mark__c--bl" d="M25 56H10A2 2 0 0 1 8 54V39H14V50H25Z"/></g><circle class="pp-mark__dot" cx="32" cy="32" r="8" fill="#2ADCF0"/></svg> Загрузчик</span>
+  </div>
+<script>
+  function replay(el) {
+    el.classList.remove('pp-mark-anim');
+    void el.getBoundingClientRect();  // reflow, чтобы анимация стартовала заново
+    el.classList.add('pp-mark-anim');
+  }
+</script>
+</body>
+</html>

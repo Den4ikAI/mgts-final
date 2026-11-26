@@ -1,0 +1,806 @@
+/* ==========================================================================
+   Попутно · tokens.css · v1.0 · 26.11.2026
+   Единственный источник токенов бренда. HEX-литералы живут только здесь.
+
+   Два слоя:
+     1. Примитивы  --p-{hue}-{step}      сырые значения, в компонентах НЕ используются
+     2. Семантика  --surface-*, --text-*, --border-*, --action-*, --status-*, ...
+   Тёмная тема основная (диспетчерская, проектор, дека). Светлая (бригада днём, печать)
+   переназначает семантику, палитру не инвертирует.
+
+   Переключение темы:
+     <html>                      тёмная по умолчанию, светлая по prefers-color-scheme
+     <html data-theme="dark">    тёмная всегда
+     <html data-theme="light">   светлая всегда
+
+   Правило бренда: бренд холодный, тёплые цвета означают ТОЛЬКО состояние объекта.
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. ПРИМИТИВЫ
+     ------------------------------------------------------------------------ */
+
+  /* navy: основа, ночная диспетчерская. Опора: фон организаторов #051B29 / #030E24 */
+  --p-navy-50:   #EAF1F8;
+  --p-navy-100:  #D0DEEC;
+  --p-navy-200:  #A5BDD8;
+  --p-navy-300:  #7699C0;
+  --p-navy-400:  #4A78A6;
+  --p-navy-500:  #2B5C8C;
+  --p-navy-600:  #1C4670;
+  --p-navy-700:  #123354;
+  --p-navy-800:  #0A2540;
+  --p-navy-850:  #082037;
+  --p-navy-900:  #061A2E;
+  --p-navy-925:  #05142A;
+  --p-navy-950:  #030E1C;
+  --p-navy-1000: #020913;
+
+  /* signal: бренд-синий, родственник МГТС #008AE0, но не он */
+  --p-signal-50:  #EAF4FE;
+  --p-signal-100: #D2E8FD;
+  --p-signal-200: #A6D0FA;
+  --p-signal-300: #6FB3F5;
+  --p-signal-400: #3A98EE;
+  --p-signal-500: #0A84E6;  /* основной: знак, линия маршрута */
+  --p-signal-550: #0576D6;  /* hover кнопки в тёмной теме, белый текст 4.6:1 */
+  --p-signal-600: #0068C2;  /* текст и кнопки на светлом, белый текст 5.6:1 */
+  --p-signal-700: #00549E;
+  --p-signal-800: #03437E;
+  --p-signal-900: #073763;
+  --p-signal-950: #06223F;
+
+  /* scan: циан «камера заметила». Редкий акцент на тёмном. Не текст на светлом */
+  --p-scan-50:  #E8FCFE;
+  --p-scan-100: #C6F6FC;
+  --p-scan-200: #93EEF8;
+  --p-scan-300: #5FE5F4;
+  --p-scan-400: #2ADCF0;  /* основной: точка знака, рамка детекции, фокус на тёмном */
+  --p-scan-500: #0FC2DA;
+  --p-scan-600: #009EBF;  /* точка знака на светлом фоне, 3.2:1 к белому */
+  --p-scan-700: #0A7B8E;
+  --p-scan-800: #0E6270;
+  --p-scan-900: #10505C;
+  --p-scan-950: #04323B;
+
+  /* slate: холодные нейтрали */
+  --p-slate-0:   #FFFFFF;
+  --p-slate-25:  #F5F8FB;
+  --p-slate-50:  #EEF2F6;
+  --p-slate-100: #E2E8EF;
+  --p-slate-200: #CDD5DF;
+  --p-slate-300: #AEB9C6;
+  --p-slate-400: #8A97A8;
+  --p-slate-500: #6B7889;
+  --p-slate-600: #536072;
+  --p-slate-700: #3E4A5A;
+  --p-slate-800: #2A3543;
+  --p-slate-850: #1F2934;
+  --p-slate-900: #16202B;
+  --p-slate-950: #0B1520;
+
+  /* ok · «Норма» · галочка */
+  --p-ok-50:  #E8F7F0;
+  --p-ok-100: #C9EEDC;
+  --p-ok-200: #94DCBA;
+  --p-ok-300: #5CC895;
+  --p-ok-400: #34B87F;
+  --p-ok-500: #1FA971;
+  --p-ok-600: #16885A;
+  --p-ok-700: #126C49;
+  --p-ok-800: #10553A;
+  --p-ok-900: #0D432F;
+  --p-ok-950: #06261B;
+
+  /* suspected · «Проверить» · вопрос */
+  --p-suspected-50:  #FDF8E6;
+  --p-suspected-100: #FAEDBD;
+  --p-suspected-200: #F5DB82;
+  --p-suspected-300: #F0C94D;
+  --p-suspected-400: #ECBD31;
+  --p-suspected-500: #E8B520;
+  --p-suspected-600: #B88C0F;
+  --p-suspected-700: #876608;
+  --p-suspected-800: #6B510D;
+  --p-suspected-900: #54400E;
+  --p-suspected-950: #302307;
+
+  /* defect · «Дефект» · гаечный ключ. Оранжевый от куба организаторов */
+  --p-defect-50:  #FEF1E6;
+  --p-defect-100: #FCDCC0;
+  --p-defect-200: #F8B884;
+  --p-defect-300: #F39A52;
+  --p-defect-400: #EF8834;
+  --p-defect-500: #EC7A1C;
+  --p-defect-600: #C45F0E;
+  --p-defect-700: #9A4A0C;
+  --p-defect-800: #773A0D;
+  --p-defect-900: #5E2F0D;
+  --p-defect-950: #361A06;
+
+  /* critical · «Критично» · молния */
+  --p-critical-50:  #FDECEC;
+  --p-critical-100: #FAD0D1;
+  --p-critical-200: #F4A1A3;
+  --p-critical-300: #EE7275;
+  --p-critical-400: #EA5558;
+  --p-critical-500: #E5383B;
+  --p-critical-550: #D42E31;  /* hover кнопки «опасно» в тёмной теме, белый 4.9:1 */
+  --p-critical-600: #C42427;
+  --p-critical-700: #9E1D20;
+  --p-critical-800: #7C1A1C;
+  --p-critical-900: #621719;
+  --p-critical-950: #380B0C;
+
+  /* not-observed · «Не наблюдается» · перечёркнутый глаз + пунктир. Это slate,
+     вынесенный отдельным именем, чтобы статус не путали с «выключенным» UI */
+  --p-unseen-50:  #EEF2F6;
+  --p-unseen-100: #E2E8EF;
+  --p-unseen-200: #CDD5DF;
+  --p-unseen-300: #AEB9C6;
+  --p-unseen-400: #8A97A8;
+  --p-unseen-500: #6B7889;
+  --p-unseen-600: #536072;
+  --p-unseen-700: #3E4A5A;
+  --p-unseen-800: #2A3543;
+  --p-unseen-900: #16202B;
+
+  /* ------------------------------------------------------------------------
+     2. НЕЗАВИСИМЫЕ ОТ ТЕМЫ ТОКЕНЫ
+     ------------------------------------------------------------------------ */
+
+  /* Гарнитуры. Unbounded только от 20 px: обложки, заголовки разделов, KPI, логотип */
+  --font-display: "Unbounded", "Golos Text", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    "Golos Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-display:  600;   /* Unbounded: логотип и заголовки */
+
+  /* Шкала. size / line-height / tracking. Межстрочный падает с ростом кегля */
+  --text-display-size: clamp(1.875rem, 1rem + 4vw, 4.5rem);      /* 30–72, Unbounded */
+  --text-display-lh:   1.08;
+  --text-display-tr:   -0.035em;
+
+  --text-h1-size: clamp(2rem, 1.5rem + 1.8vw, 3rem);             /* 32–48, Unbounded */
+  --text-h1-lh:   1.15;
+  --text-h1-tr:   -0.025em;
+
+  --text-h2-size: 1.75rem;   /* 28, Unbounded */
+  --text-h2-lh:   1.25;
+  --text-h2-tr:   -0.02em;
+
+  --text-h3-size: 1.25rem;   /* 20, Golos 600 */
+  --text-h3-lh:   1.3;
+  --text-h3-tr:   -0.01em;
+
+  --text-title-size: 1.125rem; /* 18, Golos 600: заголовок карточки */
+  --text-title-lh:   1.35;
+  --text-title-tr:   -0.005em;
+
+  --text-body-size: 1rem;      /* 16 */
+  --text-body-lh:   1.55;
+
+  --text-body-sm-size: 0.875rem; /* 14: интерфейс по умолчанию */
+  --text-body-sm-lh:   1.45;
+
+  --text-label-size: 0.8125rem;  /* 13, 600: кнопка, поле, пилюля */
+  --text-label-lh:   1.3;
+
+  --text-caption-size: 0.75rem;  /* 12: мета, время, источник */
+  --text-caption-lh:   1.4;
+
+  --text-micro-size: 0.6875rem;  /* 11, 600, +0.04em: группа в списке, шапка таблицы */
+  --text-micro-lh:   1.3;
+  --text-micro-tr:   0.04em;
+
+  --text-kpi-size: clamp(2.25rem, 1.7rem + 2vw, 3.5rem); /* 36–56, Unbounded, tabular */
+  --text-kpi-lh:   1;
+  --text-kpi-tr:   -0.03em;
+
+  --tracking-mono: -0.01em;
+  --numeric: tabular-nums;
+
+  /* Отступы: шаг 4 */
+  --space-0:   0;
+  --space-px:  1px;
+  --space-0-5: 2px;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
+  /* алиасы по роли */
+  --space-element: var(--space-3);
+  --space-card:    var(--space-5);
+  --space-page:    var(--space-6);
+  --space-page-wide: var(--space-8);
+  --space-section: var(--space-16);
+
+  /* Радиусы: сдержанные, «приборные» */
+  --radius-xs:   4px;   /* тег, kbd, чекбокс, бирка детекции */
+  --radius-sm:   6px;   /* компактная кнопка, опция меню */
+  --radius-md:   8px;   /* кнопка, поле, select */
+  --radius-lg:   12px;  /* карточка, панель, тост */
+  --radius-xl:   16px;  /* диалог, лист, крупная плитка */
+  --radius-pill: 999px; /* пилюля статуса, переключатель */
+
+  /* Линии */
+  --hairline: 1px;
+  --stroke-icon: 1.75;
+  --stroke-route: 2px;     /* линия маршрута в UI */
+  --stroke-detect: 2px;    /* уголки рамки детекции */
+  --detect-arm: 14px;      /* длина плеча уголка рамки детекции */
+
+  /* Контролы */
+  --control-sm: 32px;
+  --control-md: 40px;
+  --control-lg: 48px;
+  --target-min: 44px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 48px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* Раскладка */
+  --header-height: 56px;
+  --sidebar-width: 248px;
+  --prose-measure: 68ch;
+  --content-max: 1280px;
+
+  /* Слои */
+  --z-base: 0;
+  --z-raised: 1;
+  --z-sticky: 10;
+  --z-map-controls: 20;
+  --z-popover: 40;
+  --z-dialog: 50;
+  --z-toast: 55;
+  --z-tooltip: 60;
+
+  /* Брейкпоинты (custom media не работают без сборки, используем числа):
+     --bp-sm 30rem  (480)  одна колонка карточек
+     --bp-md 48rem  (768)  список и карта переключаются
+     --bp-lg 64rem  (1024) список рядом с картой, nav скрыт
+     --bp-xl 75rem  (1200) поля 32
+     --bp-2xl 90rem (1440) широкий дашборд
+     @custom-media --sm (min-width: 30rem);
+     @custom-media --md (min-width: 48rem);
+     @custom-media --lg (min-width: 64rem);
+     @custom-media --xl (min-width: 75rem);  */
+  --bp-sm: 30rem;
+  --bp-md: 48rem;
+  --bp-lg: 64rem;
+  --bp-xl: 75rem;
+  --bp-2xl: 90rem;
+
+  /* Движение. Ответ на клик короче 300 мс, выход короче входа, без ease-in и пружин */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);     /* вход, отклик, hover: по умолчанию */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);    /* перемещение по экрану, смена темы */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);     /* боковая панель, нижний лист */
+  --ease-route:  cubic-bezier(0.65, 0, 0.35, 1);     /* прорисовка маршрута, знак */
+  --ease-linear: linear;                             /* только бесконечное: спиннер, шиммер */
+
+  --dur-instant:   80ms;
+  --dur-press:     140ms;   /* нажатие */
+  --dur-release:   110ms;   /* отпускание */
+  --dur-fast:      160ms;   /* hover, цвет */
+  --dur-fast-exit: 110ms;
+  --dur-base:      200ms;   /* тултип, поповер, смена содержимого */
+  --dur-exit:      140ms;
+  --dur-panel:     260ms;   /* панель, диалог */
+  --dur-panel-exit: 200ms;
+  --dur-slow:      320ms;
+  --dur-reveal:    560ms;   /* смена темы */
+  --dur-grow:      480ms;   /* рамка детекции вырастает из маленького прямоугольника */
+  --dur-mark:      900ms;   /* анимация знака целиком */
+  --dur-draw:      900ms;   /* прорисовка линии маршрута */
+  --dur-pulse:     1200ms;  /* однократный пульс «Критично» */
+  --dur-shimmer:   1600ms;
+  --dur-spin:      800ms;
+  --stagger:       40ms;
+
+  --press-scale:         0.97;
+  --press-scale-surface: 0.99;
+  --enter-scale:         0.95;
+  --snap-scale:          1.15;  /* уголки знака защёлкиваются из 1.15 */
+  --grow-scale:          0.2;   /* рамка детекции стартует с 20% размера */
+  --shift-rise:   6px;
+  --shift-anchor: 4px;
+  --shift-toast:  24px;
+
+  --delay-tooltip:  500ms;
+  --delay-skeleton: 200ms;
+  --delay-spinner:  400ms;
+  --toast-life:       5000ms;
+  --toast-life-error: 10000ms;
+
+  /* Поверх фото и видео: тема не важна, фон всегда снимок */
+  --on-media: var(--p-slate-50);
+  --on-media-muted: rgb(238 242 246 / 0.72);
+
+  /* Готовые transition-строки для контролов (не transition: all) */
+  --transition-control:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+/* ==========================================================================
+   3. СЕМАНТИКА · ТЁМНАЯ ТЕМА (основная)
+   ========================================================================== */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Поверхности: от самой глубокой к самой высокой */
+  --surface-sunken:       var(--p-navy-1000);  /* подложка демо, углубление под таблицей */
+  --surface-base:         var(--p-navy-950);   /* фон страницы */
+  --surface-raised:       var(--p-navy-900);   /* карточка, панель */
+  --surface-raised-hover: var(--p-navy-850);
+  --surface-overlay:      var(--p-navy-800);   /* меню, диалог, тост */
+  --surface-inverse:      var(--p-slate-50);   /* тултип */
+  --surface-selected:     rgb(10 132 230 / 0.16);
+  --surface-skeleton:     var(--p-navy-850);
+  --surface-scrim:        rgb(2 9 19 / 0.66);
+
+  /* Текст */
+  --text-primary:    var(--p-slate-50);
+  --text-secondary:  var(--p-slate-300);
+  --text-muted:      var(--p-slate-400);
+  --text-disabled:   var(--p-slate-600);
+  --text-inverse:    var(--p-navy-950);
+  --text-accent:     var(--p-signal-300);
+  --text-link:       var(--p-signal-300);
+  --text-link-hover: var(--p-signal-200);
+  --text-on-accent:  var(--p-slate-0);
+  --text-on-scan:    var(--p-navy-950);
+
+  /* Линии (через inset box-shadow, чтобы не менять размер) */
+  --border-subtle:  rgb(174 185 198 / 0.10);
+  --border-default: rgb(174 185 198 / 0.18);
+  --border-strong:  rgb(174 185 198 / 0.34);
+  --border-accent:  var(--p-signal-500);
+
+  /* Бренд-акцент */
+  --accent:            var(--p-signal-500);
+  --accent-strong:     var(--p-signal-400);
+  --accent-subtle:     rgb(10 132 230 / 0.14);
+  --accent-subtle-hover: rgb(10 132 230 / 0.22);
+  --accent-fg:         var(--p-signal-200);
+  --scan:              var(--p-scan-400);
+  --scan-subtle:       rgb(42 220 240 / 0.12);
+
+  /* Действия */
+  --action-primary:         var(--p-signal-600);
+  --action-primary-hover:   var(--p-signal-550);
+  --action-primary-press:   var(--p-signal-700);
+  --action-secondary:       rgb(174 185 198 / 0.10);
+  --action-secondary-hover: rgb(174 185 198 / 0.16);
+  --action-secondary-press: rgb(174 185 198 / 0.22);
+  --action-secondary-fg:    var(--p-slate-50);
+  --action-ghost-hover:     rgb(174 185 198 / 0.08);
+  --action-ghost-press:     rgb(174 185 198 / 0.14);
+  --action-danger:          var(--p-critical-600);
+  --action-danger-hover:    var(--p-critical-550);
+  --action-danger-press:    var(--p-critical-700);
+  --action-disabled:        var(--p-navy-850);
+
+  /* Фокус: циан на тёмном, это «камера смотрит сюда» */
+  --focus-ring: var(--p-scan-400);
+  --text-danger: var(--status-critical-fg);  /* ошибка ввода: единственное нестатусное место для красного */
+
+  /* Статусы объекта. Тройка: fill (иконка, точка на карте), fg (текст), bg/border (пилюля) */
+  --status-ok:            var(--p-ok-400);
+  --status-ok-fg:         var(--p-ok-300);
+  --status-ok-bg:         rgb(31 169 113 / 0.14);
+  --status-ok-border:     rgb(52 184 127 / 0.38);
+
+  --status-suspected:        var(--p-suspected-400);
+  --status-suspected-fg:     var(--p-suspected-300);
+  --status-suspected-bg:     rgb(232 181 32 / 0.13);
+  --status-suspected-border: rgb(236 189 49 / 0.38);
+
+  --status-defect:        var(--p-defect-400);
+  --status-defect-fg:     var(--p-defect-300);
+  --status-defect-bg:     rgb(236 122 28 / 0.15);
+  --status-defect-border: rgb(239 136 52 / 0.42);
+
+  --status-critical:        var(--p-critical-400);
+  --status-critical-fg:     var(--p-critical-300);
+  --status-critical-bg:     rgb(229 56 59 / 0.16);
+  --status-critical-border: rgb(234 85 88 / 0.48);
+
+  --status-not-observed:        var(--p-unseen-400);
+  --status-not-observed-fg:     var(--p-unseen-300);
+  --status-not-observed-bg:     rgb(138 151 168 / 0.08);
+  --status-not-observed-border: var(--p-unseen-500);
+
+  /* Сплошные заливки статуса (метка на карте, полоса графика) одинаковы в темах */
+  --status-ok-solid:           var(--p-ok-500);
+  --status-suspected-solid:    var(--p-suspected-500);
+  --status-defect-solid:       var(--p-defect-500);
+  --status-critical-solid:     var(--p-critical-500);
+  --status-not-observed-solid: var(--p-unseen-400);
+  --status-on-solid:           var(--p-navy-950);
+
+  /* Опасность дефекта: тот же тёплый порядок */
+  --sev-low:          var(--p-suspected-400);
+  --sev-medium:       var(--p-defect-400);
+  --sev-high:         var(--p-critical-400);
+  --sev-critical:     var(--p-critical-500);
+  --sev-track:        rgb(174 185 198 / 0.18);
+  --sev-fg:           var(--p-slate-50);
+  --sev-critical-bg:  var(--p-critical-600);
+  --sev-critical-fg:  var(--p-slate-0);
+
+  /* Рамка детекции (поверх фото, поэтому циан в обеих темах) */
+  --detect-frame:        var(--p-scan-400);
+  --detect-frame-shadow: rgb(2 9 19 / 0.55);
+  --detect-tag-bg:       var(--p-scan-400);
+  --detect-tag-fg:       var(--p-navy-950);
+  --detect-defect:       var(--p-defect-400);  /* рамка, когда найден дефект */
+
+  /* Происхождение: модель vs человек */
+  --prov-model:        var(--p-scan-400);
+  --prov-model-fg:     var(--p-scan-300);
+  --prov-model-bg:     rgb(42 220 240 / 0.10);
+  --prov-human:        var(--p-slate-50);
+  --prov-human-fg:     var(--p-slate-50);
+  --prov-human-bg:     rgb(174 185 198 / 0.12);
+
+  /* Знак и логотип, которые меняются вместе с темой (inline SVG + .pp-logo) */
+  --logo-mark: var(--p-signal-500);
+  --logo-dot:  var(--p-scan-400);
+  --logo-word: var(--p-slate-25);
+
+  /* Линия маршрута: разделитель, таймлайн, прогресс */
+  --route-line:  var(--p-signal-500);
+  --route-track: rgb(174 185 198 / 0.16);
+  --route-node:  var(--p-navy-950);
+
+  /* Графики: серый + один акцент */
+  --chart-series:        var(--p-slate-600);
+  --chart-series-2:      var(--p-slate-700);
+  --chart-accent:        var(--p-signal-400);
+  --chart-grid:          rgb(174 185 198 / 0.10);
+  --chart-axis:          rgb(174 185 198 / 0.28);
+  --chart-label:         var(--p-slate-400);
+
+  /* Карта: подложка тихая, цвет только у объектов и маршрута.
+     Метки берут --status-*-solid, кольцо метки --map-pin-ring отделяет её от соседей */
+  --map-land:        var(--p-navy-950);
+  --map-block:       var(--p-navy-900);
+  --map-block-line:  var(--p-navy-800);
+  --map-water:       var(--p-signal-950);
+  --map-water-line:  var(--p-signal-900);
+  --map-park:        rgb(31 169 113 / 0.07);
+  --map-road:        var(--p-navy-800);
+  --map-road-major:  var(--p-navy-700);
+  --map-rail:        var(--p-slate-700);
+  --map-label:       var(--p-slate-400);
+  --map-label-halo:  var(--p-navy-950);
+  --map-coverage:    rgb(10 132 230 / 0.10);
+  --map-pin-ring:    var(--p-navy-950);
+  --map-pin-ring-suspected: var(--p-navy-950); /* светлая тема: тёмное кольцо жёлтой метки */
+
+  /* Тени: в тёмной теме глубже и с navy-оттенком */
+  --shadow-color:        rgb(1 6 14 / 0.42);
+  --shadow-color-strong: rgb(1 6 14 / 0.64);
+  --shadow-ring:    inset 0 0 0 1px var(--border-default);
+  --shadow-raised:  0 1px 2px var(--shadow-color);
+  --shadow-float:   0 0 0 1px var(--border-subtle), 0 6px 18px var(--shadow-color);
+  --shadow-overlay: 0 0 0 1px var(--border-default), 0 18px 48px var(--shadow-color-strong);
+
+  --selection: rgb(42 220 240 / 0.28);
+  --scrollbar-thumb: rgb(174 185 198 / 0.22);
+}
+
+/* ==========================================================================
+   4. СЕМАНТИКА · СВЕТЛАЯ ТЕМА
+   Выставлена дважды: по системной настройке (если тема не задана явно)
+   и по data-theme="light". Держать блоки одинаковыми.
+   ========================================================================== */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --surface-sunken: var(--p-slate-50);
+    --surface-base: var(--p-slate-25);
+    --surface-raised: var(--p-slate-0);
+    --surface-raised-hover: var(--p-slate-25);
+    --surface-overlay: var(--p-slate-0);
+    --surface-inverse: var(--p-navy-900);
+    --surface-selected: var(--p-signal-50);
+    --surface-skeleton: var(--p-slate-100);
+    --surface-scrim: rgb(6 26 46 / 0.40);
+    --text-primary: var(--p-navy-900);
+    --text-secondary: var(--p-slate-700);
+    --text-muted: var(--p-slate-600);
+    --text-disabled: var(--p-slate-400);
+    --text-inverse: var(--p-slate-25);
+    --text-accent: var(--p-signal-600);
+    --text-link: var(--p-signal-600);
+    --text-link-hover: var(--p-signal-800);
+    --text-on-accent: var(--p-slate-0);
+    --text-on-scan: var(--p-slate-0);
+    --border-subtle: rgb(6 26 46 / 0.08);
+    --border-default: rgb(6 26 46 / 0.14);
+    --border-strong: rgb(6 26 46 / 0.28);
+    --border-accent: var(--p-signal-600);
+    --accent: var(--p-signal-600);
+    --accent-strong: var(--p-signal-700);
+    --accent-subtle: var(--p-signal-50);
+    --accent-subtle-hover: var(--p-signal-100);
+    --accent-fg: var(--p-signal-700);
+    --scan: var(--p-scan-700);
+    --scan-subtle: var(--p-scan-50);
+    --action-primary: var(--p-signal-600);
+    --action-primary-hover: var(--p-signal-700);
+    --action-primary-press: var(--p-signal-800);
+    --action-secondary: var(--p-slate-0);
+    --action-secondary-hover: var(--p-slate-25);
+    --action-secondary-press: var(--p-slate-50);
+    --action-secondary-fg: var(--p-navy-900);
+    --action-ghost-hover: rgb(6 26 46 / 0.05);
+    --action-ghost-press: rgb(6 26 46 / 0.09);
+    --action-danger: var(--p-critical-600);
+    --action-danger-hover: var(--p-critical-700);
+    --action-danger-press: var(--p-critical-800);
+    --action-disabled: var(--p-slate-100);
+    --focus-ring: var(--p-signal-600);
+    --text-danger: var(--status-critical-fg);
+    --status-ok: var(--p-ok-600);
+    --status-ok-fg: var(--p-ok-700);
+    --status-ok-bg: var(--p-ok-50);
+    --status-ok-border: var(--p-ok-200);
+    --status-suspected: var(--p-suspected-600);
+    --status-suspected-fg: var(--p-suspected-700);
+    --status-suspected-bg: var(--p-suspected-50);
+    --status-suspected-border: var(--p-suspected-200);
+    --status-defect: var(--p-defect-600);
+    --status-defect-fg: var(--p-defect-700);
+    --status-defect-bg: var(--p-defect-50);
+    --status-defect-border: var(--p-defect-200);
+    --status-critical: var(--p-critical-600);
+    --status-critical-fg: var(--p-critical-700);
+    --status-critical-bg: var(--p-critical-50);
+    --status-critical-border: var(--p-critical-200);
+    --status-not-observed: var(--p-unseen-500);
+    --status-not-observed-fg: var(--p-unseen-600);
+    --status-not-observed-bg: var(--p-slate-25);
+    --status-not-observed-border: var(--p-unseen-500);
+    --status-ok-solid: var(--p-ok-500);
+    --status-suspected-solid: var(--p-suspected-500);
+    --status-defect-solid: var(--p-defect-500);
+    --status-critical-solid: var(--p-critical-500);
+    --status-not-observed-solid: var(--p-unseen-400);
+    --status-on-solid: var(--p-navy-950);
+    --sev-low: var(--p-suspected-600);
+    --sev-medium: var(--p-defect-600);
+    --sev-high: var(--p-critical-500);
+    --sev-critical: var(--p-critical-700);
+    --sev-track: rgb(6 26 46 / 0.12);
+    --sev-fg: var(--p-navy-900);
+    --sev-critical-bg: var(--p-critical-600);
+    --sev-critical-fg: var(--p-slate-0);
+    --detect-frame: var(--p-scan-400);
+    --detect-frame-shadow: rgb(2 9 19 / 0.55);
+    --detect-tag-bg: var(--p-scan-400);
+    --detect-tag-fg: var(--p-navy-950);
+    --detect-defect: var(--p-defect-400);
+    --prov-model: var(--p-scan-600);
+    --prov-model-fg: var(--p-scan-800);
+    --prov-model-bg: var(--p-scan-50);
+    --prov-human: var(--p-navy-900);
+    --prov-human-fg: var(--p-navy-900);
+    --prov-human-bg: var(--p-slate-50);
+    --logo-mark: var(--p-signal-600);
+    --logo-dot: var(--p-scan-600);
+    --logo-word: var(--p-navy-900);
+    --route-line: var(--p-signal-600);
+    --route-track: rgb(6 26 46 / 0.12);
+    --route-node: var(--p-slate-0);
+    --chart-series: var(--p-slate-300);
+    --chart-series-2: var(--p-slate-200);
+    --chart-accent: var(--p-signal-600);
+    --chart-grid: rgb(6 26 46 / 0.07);
+    --chart-axis: rgb(6 26 46 / 0.24);
+    --chart-label: var(--p-slate-600);
+    --map-land: var(--p-slate-50);
+    --map-block: var(--p-slate-100);
+    --map-block-line: var(--p-slate-200);
+    --map-water: var(--p-signal-100);
+    --map-water-line: var(--p-signal-200);
+    --map-park: rgb(31 169 113 / 0.10);
+    --map-road: var(--p-slate-0);
+    --map-road-major: var(--p-slate-0);
+    --map-rail: var(--p-slate-300);
+    --map-label: var(--p-slate-600);
+    --map-label-halo: var(--p-slate-50);
+    --map-coverage: rgb(0 104 194 / 0.08);
+    --map-pin-ring: var(--p-slate-0);
+    --map-pin-ring-suspected: var(--p-navy-900);
+    --shadow-color: rgb(6 26 46 / 0.08);
+    --shadow-color-strong: rgb(6 26 46 / 0.16);
+    --shadow-ring: inset 0 0 0 1px var(--border-default);
+    --shadow-raised: 0 1px 2px var(--shadow-color);
+    --shadow-float: 0 0 0 1px var(--border-subtle), 0 6px 18px var(--shadow-color);
+    --shadow-overlay: 0 0 0 1px var(--border-subtle), 0 18px 48px var(--shadow-color-strong);
+    --selection: rgb(10 132 230 / 0.20);
+    --scrollbar-thumb: rgb(6 26 46 / 0.20);
+  }
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --surface-sunken: var(--p-slate-50);
+  --surface-base: var(--p-slate-25);
+  --surface-raised: var(--p-slate-0);
+  --surface-raised-hover: var(--p-slate-25);
+  --surface-overlay: var(--p-slate-0);
+  --surface-inverse: var(--p-navy-900);
+  --surface-selected: var(--p-signal-50);
+  --surface-skeleton: var(--p-slate-100);
+  --surface-scrim: rgb(6 26 46 / 0.40);
+  --text-primary: var(--p-navy-900);
+  --text-secondary: var(--p-slate-700);
+  --text-muted: var(--p-slate-600);
+  --text-disabled: var(--p-slate-400);
+  --text-inverse: var(--p-slate-25);
+  --text-accent: var(--p-signal-600);
+  --text-link: var(--p-signal-600);
+  --text-link-hover: var(--p-signal-800);
+  --text-on-accent: var(--p-slate-0);
+  --text-on-scan: var(--p-slate-0);
+  --border-subtle: rgb(6 26 46 / 0.08);
+  --border-default: rgb(6 26 46 / 0.14);
+  --border-strong: rgb(6 26 46 / 0.28);
+  --border-accent: var(--p-signal-600);
+  --accent: var(--p-signal-600);
+  --accent-strong: var(--p-signal-700);
+  --accent-subtle: var(--p-signal-50);
+  --accent-subtle-hover: var(--p-signal-100);
+  --accent-fg: var(--p-signal-700);
+  --scan: var(--p-scan-700);
+  --scan-subtle: var(--p-scan-50);
+  --action-primary: var(--p-signal-600);
+  --action-primary-hover: var(--p-signal-700);
+  --action-primary-press: var(--p-signal-800);
+  --action-secondary: var(--p-slate-0);
+  --action-secondary-hover: var(--p-slate-25);
+  --action-secondary-press: var(--p-slate-50);
+  --action-secondary-fg: var(--p-navy-900);
+  --action-ghost-hover: rgb(6 26 46 / 0.05);
+  --action-ghost-press: rgb(6 26 46 / 0.09);
+  --action-danger: var(--p-critical-600);
+  --action-danger-hover: var(--p-critical-700);
+  --action-danger-press: var(--p-critical-800);
+  --action-disabled: var(--p-slate-100);
+  --focus-ring: var(--p-signal-600);
+  --text-danger: var(--status-critical-fg);
+  --status-ok: var(--p-ok-600);
+  --status-ok-fg: var(--p-ok-700);
+  --status-ok-bg: var(--p-ok-50);
+  --status-ok-border: var(--p-ok-200);
+  --status-suspected: var(--p-suspected-600);
+  --status-suspected-fg: var(--p-suspected-700);
+  --status-suspected-bg: var(--p-suspected-50);
+  --status-suspected-border: var(--p-suspected-200);
+  --status-defect: var(--p-defect-600);
+  --status-defect-fg: var(--p-defect-700);
+  --status-defect-bg: var(--p-defect-50);
+  --status-defect-border: var(--p-defect-200);
+  --status-critical: var(--p-critical-600);
+  --status-critical-fg: var(--p-critical-700);
+  --status-critical-bg: var(--p-critical-50);
+  --status-critical-border: var(--p-critical-200);
+  --status-not-observed: var(--p-unseen-500);
+  --status-not-observed-fg: var(--p-unseen-600);
+  --status-not-observed-bg: var(--p-slate-25);
+  --status-not-observed-border: var(--p-unseen-500);
+  --status-ok-solid: var(--p-ok-500);
+  --status-suspected-solid: var(--p-suspected-500);
+  --status-defect-solid: var(--p-defect-500);
+  --status-critical-solid: var(--p-critical-500);
+  --status-not-observed-solid: var(--p-unseen-400);
+  --status-on-solid: var(--p-navy-950);
+  --sev-low: var(--p-suspected-600);
+  --sev-medium: var(--p-defect-600);
+  --sev-high: var(--p-critical-500);
+  --sev-critical: var(--p-critical-700);
+  --sev-track: rgb(6 26 46 / 0.12);
+  --sev-fg: var(--p-navy-900);
+  --sev-critical-bg: var(--p-critical-600);
+  --sev-critical-fg: var(--p-slate-0);
+  --detect-frame: var(--p-scan-400);
+  --detect-frame-shadow: rgb(2 9 19 / 0.55);
+  --detect-tag-bg: var(--p-scan-400);
+  --detect-tag-fg: var(--p-navy-950);
+  --detect-defect: var(--p-defect-400);
+  --prov-model: var(--p-scan-600);
+  --prov-model-fg: var(--p-scan-800);
+  --prov-model-bg: var(--p-scan-50);
+  --prov-human: var(--p-navy-900);
+  --prov-human-fg: var(--p-navy-900);
+  --prov-human-bg: var(--p-slate-50);
+  --logo-mark: var(--p-signal-600);
+  --logo-dot: var(--p-scan-600);
+  --logo-word: var(--p-navy-900);
+  --route-line: var(--p-signal-600);
+  --route-track: rgb(6 26 46 / 0.12);
+  --route-node: var(--p-slate-0);
+  --chart-series: var(--p-slate-300);
+  --chart-series-2: var(--p-slate-200);
+  --chart-accent: var(--p-signal-600);
+  --chart-grid: rgb(6 26 46 / 0.07);
+  --chart-axis: rgb(6 26 46 / 0.24);
+  --chart-label: var(--p-slate-600);
+  --map-land: var(--p-slate-50);
+  --map-block: var(--p-slate-100);
+  --map-block-line: var(--p-slate-200);
+  --map-water: var(--p-signal-100);
+  --map-water-line: var(--p-signal-200);
+  --map-park: rgb(31 169 113 / 0.10);
+  --map-road: var(--p-slate-0);
+  --map-road-major: var(--p-slate-0);
+  --map-rail: var(--p-slate-300);
+  --map-label: var(--p-slate-600);
+  --map-label-halo: var(--p-slate-50);
+  --map-coverage: rgb(0 104 194 / 0.08);
+  --map-pin-ring: var(--p-slate-0);
+  --map-pin-ring-suspected: var(--p-navy-900);
+  --shadow-color: rgb(6 26 46 / 0.08);
+  --shadow-color-strong: rgb(6 26 46 / 0.16);
+  --shadow-ring: inset 0 0 0 1px var(--border-default);
+  --shadow-raised: 0 1px 2px var(--shadow-color);
+  --shadow-float: 0 0 0 1px var(--border-subtle), 0 6px 18px var(--shadow-color);
+  --shadow-overlay: 0 0 0 1px var(--border-subtle), 0 18px 48px var(--shadow-color-strong);
+  --selection: rgb(10 132 230 / 0.20);
+  --scrollbar-thumb: rgb(6 26 46 / 0.20);
+}
+
+/* ==========================================================================
+   5. МЕНЬШЕ ДВИЖЕНИЯ
+   Перемещение и масштаб обнуляются, длинные анимации становятся мгновенными.
+   Короткие fast/base остаются для смены цвета и прозрачности: это не движение.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-press: 1ms;
+    --dur-release: 1ms;
+    --dur-panel: 1ms;
+    --dur-panel-exit: 1ms;
+    --dur-slow: 1ms;
+    --dur-reveal: 1ms;
+    --dur-grow: 1ms;
+    --dur-mark: 1ms;
+    --dur-draw: 1ms;
+    --dur-pulse: 1ms;
+    --dur-shimmer: 1ms;
+    --dur-spin: 2400ms;  /* спиннер не прячем: он несёт смысл «ждём», только медленнее */
+    --stagger: 0ms;
+    --press-scale: 1;
+    --press-scale-surface: 1;
+    --enter-scale: 1;
+    --snap-scale: 1;
+    --grow-scale: 1;
+    --shift-rise: 0px;
+    --shift-anchor: 0px;
+    --shift-toast: 0px;
+  }
+}

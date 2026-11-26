@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Основа бренда | Попутно</title>
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<script>
+  /* Тема до отрисовки: ?theme=dark|light, иначе выбор из localStorage, иначе система */
+  (function () {
+    var q = new URLSearchParams(location.search).get('theme'), t = q;
+    try { if (!t) t = localStorage.getItem('pp-theme'); } catch (e) {}
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<style>
+  /* Раскладка страницы-образца. Только токены. */
+  html { scroll-padding-top: calc(var(--header-height) + var(--space-4)); }
+  body { min-height: 100vh; }
+  .top {
+    position: sticky; top: 0; z-index: var(--z-sticky);
+    display: flex; align-items: center; gap: var(--space-4);
+    height: var(--header-height); padding: 0 var(--space-page);
+    background: var(--surface-base); box-shadow: inset 0 -1px 0 var(--border-subtle);
+  }
+  .top .pp-logo { height: 26px; }
+  .top__sep { width: 1px; height: 20px; background: var(--border-default); }
+  .top__spacer { flex: 1; }
+  main { max-width: var(--content-max); margin: 0 auto; padding: 0 var(--space-page) var(--space-24); }
+  section { padding-top: var(--space-16); }
+  .sec-head { max-width: 70ch; margin-bottom: var(--space-8); }
+  .sec-head p { margin: var(--space-3) 0 0; color: var(--text-secondary); font-size: var(--text-body-size); }
+  h3.blk { margin: var(--space-10) 0 var(--space-2); font-size: var(--text-h3-size); line-height: var(--text-h3-lh); font-weight: var(--weight-semibold); letter-spacing: var(--text-h3-tr); }
+  p.rule { margin: 0 0 var(--space-4); max-width: 70ch; color: var(--text-secondary); font-size: var(--text-body-sm-size); }
+  .tok { font-family: var(--font-mono); font-size: var(--text-caption-size); color: var(--text-muted); letter-spacing: var(--tracking-mono); }
+  .demo { min-width: 0; padding: var(--space-6); border-radius: var(--radius-lg); background: var(--surface-sunken); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+  .stack { display: flex; flex-direction: column; gap: var(--space-3); }
+  .grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--min, 280px)), 1fr)); }
+  .split { display: grid; gap: var(--space-4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 48rem) { .split { grid-template-columns: minmax(0, 1fr); } }
+
+  /* Обложка */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--space-12); align-items: center; padding-top: var(--space-16); }
+  .hero__mark { justify-self: center; width: min(100%, 320px); aspect-ratio: 1; display: grid; place-items: center; }
+  .hero__mark .pp-mark { width: 100%; height: auto; }
+  .hero p.lead { margin: var(--space-8) 0 var(--space-6); max-width: 52ch; font-size: var(--text-body-size); color: var(--text-secondary); }
+  .hero .promise { color: var(--text-primary); }
+  @media (max-width: 64rem) { .hero { grid-template-columns: minmax(0, 1fr); } .hero__mark { width: 200px; } }
+
+  /* Логотипы */
+  .logo-tile { margin: 0; display: grid; place-items: center; min-height: 168px; padding: var(--space-8); border-radius: var(--radius-lg); position: relative; }
+  .logo-tile img { max-width: 100%; height: 44px; }
+  .logo-tile figcaption { position: absolute; left: var(--space-4); bottom: var(--space-3); font-family: var(--font-mono); font-size: var(--text-caption-size); }
+  .bg-navy   { background: var(--p-navy-950); color: var(--p-slate-400); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+  .bg-navy2  { background: var(--p-navy-800); color: var(--p-slate-300); }
+  .bg-paper  { background: var(--p-slate-25); color: var(--p-slate-600); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+  .bg-white  { background: var(--p-slate-0); color: var(--p-slate-600); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+  .bg-signal { background: var(--p-signal-500); color: var(--p-signal-50); }
+  .sizes { display: flex; align-items: flex-end; gap: var(--space-6); flex-wrap: wrap; }
+  .sizes figure { margin: 0; display: grid; gap: var(--space-2); justify-items: center; }
+  .og { width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-ring); display: block; }
+  .tabmock { display: flex; align-items: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md) var(--radius-md) 0 0; font-size: var(--text-label-size); width: min(240px, 50%); }
+  .tabmock img { width: 16px; height: 16px; }
+
+  /* Палитра */
+  .ramp { display: grid; grid-template-columns: 112px repeat(var(--n), minmax(0, 1fr)); gap: 2px; margin-bottom: var(--space-2); align-items: stretch; }
+  .ramp__name { display: flex; flex-direction: column; justify-content: center; font-size: var(--text-label-size); font-weight: var(--weight-semibold); }
+  .ramp__name span { font-family: var(--font-mono); font-weight: var(--weight-regular); font-size: var(--text-micro-size); color: var(--text-muted); }
+  .sw { min-height: 64px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; line-height: 1.2; }
+  .ramp .sw:nth-child(2) { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+  .ramp .sw:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+  .sw.is-key { box-shadow: inset 0 -3px 0 currentColor; }
+  @media (max-width: 64rem) { .ramp { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); } .ramp__name { grid-column: 1 / -1; } .sw { min-height: 48px; font-size: 9px; } .sw .hex { display: none; } }
+
+  /* Семантика */
+  .sem { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--space-2) var(--space-6); }
+  .sem__row { display: grid; grid-template-columns: 32px 1fr auto; gap: var(--space-3); align-items: center; padding: 6px 0; box-shadow: inset 0 -1px 0 var(--border-subtle); }
+  .sem__chip { width: 32px; height: 32px; border-radius: var(--radius-sm); box-shadow: inset 0 0 0 1px var(--border-default); }
+  .sem__name { font-family: var(--font-mono); font-size: var(--text-caption-size); }
+  .sem__val { font-family: var(--font-mono); font-size: var(--text-micro-size); color: var(--text-muted); }
+  .sem__cr { font-family: var(--font-mono); font-size: var(--text-caption-size); }
+  .sem__cr.ok { color: var(--status-ok-fg); }
+  .sem__cr.bad { color: var(--text-danger); }
+
+  /* Типографика */
+  .type-row { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--space-6); align-items: baseline; padding: var(--space-4) 0; box-shadow: inset 0 -1px 0 var(--border-subtle); }
+  .type-row .tok { display: block; }
+  @media (max-width: 48rem) { .type-row { grid-template-columns: 1fr; gap: var(--space-2); } }
+  .fonts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  @media (max-width: 64rem) { .fonts { grid-template-columns: 1fr; } }
+  .font-card .big { font-size: 72px; line-height: 1; margin: var(--space-3) 0; }
+
+  /* Отступы, формы, движение */
+  .bar { height: 12px; background: var(--accent); border-radius: 2px; }
+  .space-row { display: grid; grid-template-columns: 120px 48px 1fr; gap: var(--space-3); align-items: center; padding: 4px 0; }
+  .radius-tile { width: 96px; height: 72px; background: var(--surface-raised); box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+  .shadow-tile { width: 140px; height: 88px; border-radius: var(--radius-lg); background: var(--surface-raised); display: grid; place-items: center; }
+  .ease-row { display: grid; grid-template-columns: 140px 1fr 120px; gap: var(--space-4); align-items: center; padding: 6px 0; box-shadow: inset 0 -1px 0 var(--border-subtle); }
+  .ease-track { position: relative; height: 4px; background: var(--route-track); border-radius: 2px; }
+  .ease-track i { position: absolute; left: 0; top: -4px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .motion-demo:hover .ease-track i, .motion-demo.play .ease-track i { transform: translateX(calc(var(--w, 300px) - 12px)); }
+
+  /* Иконки */
+  .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 2px; }
+  .icon-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); height: 96px; background: var(--surface-raised); color: var(--text-primary); }
+  .icon-cell span { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-align: center; padding: 0 4px; }
+  .icon-cell.st-ok { color: var(--status-ok); } .icon-cell.st-suspected { color: var(--status-suspected); }
+  .icon-cell.st-defect { color: var(--status-defect); } .icon-cell.st-critical { color: var(--status-critical); }
+  .icon-cell.st-not-observed { color: var(--status-not-observed); }
+
+  /* Компоненты */
+  .matrix { width: 100%; border-collapse: collapse; }
+  .matrix th { text-align: left; font-size: var(--text-micro-size); color: var(--text-muted); font-weight: var(--weight-semibold); letter-spacing: var(--text-micro-tr); text-transform: uppercase; padding: 0 var(--space-2) var(--space-3); }
+  .matrix td { padding: var(--space-2); vertical-align: middle; }
+  .matrix td:first-child { font-size: var(--text-label-size); color: var(--text-secondary); white-space: nowrap; }
+  .scene { aspect-ratio: 16 / 10; width: 100%; }
+  .scene svg { display: block; width: 100%; height: 100%; }
+  .note { font-size: var(--text-caption-size); color: var(--text-muted); margin-top: var(--space-2); }
+  .placeholder-data { font-family: var(--font-mono); color: var(--text-accent); }
+  .stage-toasts { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }
+  .obj-card .pp-detect { aspect-ratio: 16 / 9; border-radius: var(--radius-md); }
+  .dl { display: grid; grid-template-columns: auto 1fr; gap: 4px var(--space-4); margin: 0; font-size: var(--text-caption-size); }
+  .dl dt { color: var(--text-muted); } .dl dd { margin: 0; font-family: var(--font-mono); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  footer { margin-top: var(--space-20); padding-top: var(--space-6); box-shadow: inset 0 1px 0 var(--border-subtle); color: var(--text-muted); font-size: var(--text-caption-size); }
+  @media (max-width: 48rem) { .hide-sm { display: none; } }
+</style>
+</head>
+<body class="pp-page">
+<!--ICONS--><svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-status-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.7"/></symbol><symbol id="i-status-suspected" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.7a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.4"/><path d="M12 16.9h.01"/></symbol><symbol id="i-status-defect" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.6 6.4a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a5.5 5.5 0 0 1-7.3 7.3l-6.6 6.6a2.1 2.1 0 0 1-3-3l6.6-6.6a5.5 5.5 0 0 1 7.3-7.3z"/></symbol><symbol id="i-status-critical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2.8L4.6 13.4H11l-1 7.8 8.4-10.6H12l1-7.8z"/></symbol><symbol id="i-status-not-observed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1c.5-.1.9-.1 1.4-.1 5 0 8.5 4.5 9.5 7-.4 1-1.2 2.3-2.3 3.5"/><path d="M6.6 6.6C4.5 8 3.1 10.2 2.5 12c1 2.5 4.5 7 9.5 7 1.7 0 3.2-.5 4.5-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol><symbol id="i-manhole" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M7.5 8.5h9M6 12h12M7.5 15.5h9"/></symbol><symbol id="i-pole" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M6.5 5.5h11M9 21h6M8 5.5V4M16 5.5V4M6.5 5.5c-.8 2-2 3.2-3.5 3.8M17.5 5.5c.8 2 2 3.2 3.5 3.8"/></symbol><symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></symbol><symbol id="i-car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3.8a.8.8 0 0 1-.8-.8V13l1.9-4.1A1.5 1.5 0 0 1 6.3 8h8.4a1.5 1.5 0 0 1 1.2.6l3 3.9h1.3a.8.8 0 0 1 .8.8v2.9a.8.8 0 0 1-.8.8H19M9 17h6M3.4 12.5h16"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></symbol><symbol id="i-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h9a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h9"/></symbol><symbol id="i-map-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol><symbol id="i-frame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/><circle cx="12" cy="12" r="2.5"/></symbol><symbol id="i-user-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 20a7 7 0 0 1 10.5-6"/><path d="M15.5 18l2 2 4-4"/></symbol><symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol><symbol id="i-queue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13l2.5-7h11l2.5 7v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 13h4.5l1 2h5l1-2H20"/></symbol><symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-4M12 16V7M17 16v-6"/></symbol><symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol><symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></symbol><symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.4-4.4"/></symbol><symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol><symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></symbol><symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol><symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12.5l9 5 9-5M3 16.5l9 5 9-5"/></symbol><symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol><symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.3L2.8 17.5a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.5M12 17.1h.01"/></symbol><symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12C3.5 9.5 7 5 12 5s8.5 4.5 9.5 7c-1 2.5-4.5 7-9.5 7s-8.5-4.5-9.5-7z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></symbol><symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol></svg><!--/ICONS-->
+
+<header class="top">
+  <!--LOGO--><svg class="pp-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329.45 64" role="img" aria-label="Попутно"><g class="pp-mark__route" fill="#0A84E6"><path class="pp-mark__route-l" d="M3 29H21V35H0Z"/><path class="pp-mark__route-r" d="M43 29H64L61 35H43Z"/></g><g class="pp-mark__frame" fill="#0A84E6"><path class="pp-mark__c pp-mark__c--tl" d="M8 25V10A2 2 0 0 1 10 8H25V14H14V25Z"/><path class="pp-mark__c pp-mark__c--tr" d="M39 8H54A2 2 0 0 1 56 10V25H50V14H39Z"/><path class="pp-mark__c pp-mark__c--br" d="M56 39V54A2 2 0 0 1 54 56H39V50H50V39Z"/><path class="pp-mark__c pp-mark__c--bl" d="M25 56H10A2 2 0 0 1 8 54V39H14V50H25Z"/></g><circle class="pp-mark__dot" cx="32" cy="32" r="8" fill="#2ADCF0"/><path class="pp-logo__word" fill="#F5F8FB" d="M112.22 18V46H103.1V20.67L107.28 24.83H84.92L89.1 20.67V46H79.98V18ZM133.46 46.78Q128.16 46.78 124.18 44.92Q120.19 43.07 117.97 39.73Q115.74 36.39 115.74 32.01Q115.74 27.57 117.97 24.25Q120.19 20.93 124.18 19.07Q128.17 17.22 133.47 17.22Q138.77 17.22 142.75 19.07Q146.73 20.93 148.96 24.25Q151.18 27.57 151.18 32.01Q151.18 36.4 148.96 39.73Q146.73 43.07 142.75 44.92Q138.76 46.78 133.46 46.78ZM133.47 39.93Q136.13 39.93 138.02 38.97Q139.91 38.02 140.94 36.24Q141.96 34.46 141.96 32.01Q141.96 29.53 140.94 27.75Q139.91 25.98 138.02 25.02Q136.13 24.07 133.47 24.07Q130.84 24.07 128.93 25.02Q127.01 25.98 125.99 27.75Q124.97 29.53 124.97 32Q124.97 34.47 125.99 36.24Q127.01 38.02 128.93 38.97Q130.84 39.93 133.47 39.93ZM186.94 18V46H177.81V20.67L182 24.83H159.64L163.82 20.67V46H154.69V18ZM200.41 54.88Q197.47 54.88 195.17 54.16Q192.87 53.43 190.73 51.95V45.52Q192.93 46.92 194.87 47.54Q196.81 48.16 199.14 48.16Q201.18 48.16 202.74 47.27Q204.3 46.38 205.31 44.04L216.51 18H226.2L212.5 46.9Q211.12 49.85 209.19 51.6Q207.26 53.35 205.03 54.12Q202.79 54.88 200.41 54.88ZM201.46 43.81 189.33 18H199.38L210.3 43.81ZM235.4 21.16H244.52V46H235.4ZM224.51 18H255.4V24.93H224.51ZM258.05 18H267.15V46H258.05ZM281.39 18H290.49V46H281.39ZM263.27 28.3H284.9V35.13H263.27ZM311.73 46.78Q306.43 46.78 302.44 44.92Q298.46 43.07 296.23 39.73Q294.01 36.39 294.01 32.01Q294.01 27.57 296.23 24.25Q298.46 20.93 302.45 19.07Q306.43 17.22 311.73 17.22Q317.03 17.22 321.02 19.07Q325 20.93 327.23 24.25Q329.45 27.57 329.45 32.01Q329.45 36.4 327.23 39.73Q325 43.07 321.01 44.92Q317.03 46.78 311.73 46.78ZM311.73 39.93Q314.4 39.93 316.29 38.97Q318.18 38.02 319.2 36.24Q320.23 34.46 320.23 32.01Q320.23 29.53 319.2 27.75Q318.18 25.98 316.29 25.02Q314.4 24.07 311.73 24.07Q309.11 24.07 307.2 25.02Q305.28 25.98 304.26 27.75Q303.23 29.53 303.23 32Q303.23 34.47 304.26 36.24Q305.28 38.02 307.2 38.97Q309.11 39.93 311.73 39.93Z"/></svg><!--/LOGO-->
+  <span class="top__sep hide-sm"></span>
+  <span class="pp-label pp-muted hide-sm">Основа бренда</span>
+  <span class="tok hide-sm">v1.0 · 26.11.2026</span>
+  <span class="top__spacer"></span>
+  <div class="pp-segmented" role="group" aria-label="Тема">
+    <button class="pp-segmented__item" type="button" data-theme-set="system">Система</button>
+    <button class="pp-segmented__item" type="button" data-theme-set="dark"><svg class="pp-icon"><use href="#i-moon"/></svg><span class="hide-sm">Тёмная</span></button>
+    <button class="pp-segmented__item" type="button" data-theme-set="light"><svg class="pp-icon"><use href="#i-sun"/></svg><span class="hide-sm">Светлая</span></button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ ОБЛОЖКА ============ -->
+  <div class="hero" id="cover">
+    <div>
+      <h1 class="pp-display">Машины уже едут.<br><span class="promise">Инфраструктуру проверяем попутно.</span></h1>
+      <p class="lead">Основа бренда «Попутно»: токены, компоненты, знак и иконки. Брендбук, дека и сайт берут цвета, шрифты и формы только отсюда: <span class="pp-mono">tokens.css</span> и <span class="pp-mono">components.css</span>.</p>
+      <div class="row">
+        <a class="pp-btn pp-btn--primary" href="#components">Компоненты<svg class="pp-icon"><use href="#i-arrow-right"/></svg></a>
+        <button class="pp-btn pp-btn--secondary" type="button" id="replay">Проиграть знак</button>
+      </div>
+    </div>
+    <div class="hero__mark"><!--MARK--><svg class="pp-mark pp-logo pp-mark-anim" id="hero-mark" viewBox="0 0 64 64" role="img" aria-label="Знак «Попутно»"><g class="pp-mark__route" fill="#0A84E6"><path class="pp-mark__route-l" d="M3 29H21V35H0Z"/><path class="pp-mark__route-r" d="M43 29H64L61 35H43Z"/></g><g class="pp-mark__frame" fill="#0A84E6"><path class="pp-mark__c pp-mark__c--tl" d="M8 25V10A2 2 0 0 1 10 8H25V14H14V25Z"/><path class="pp-mark__c pp-mark__c--tr" d="M39 8H54A2 2 0 0 1 56 10V25H50V14H39Z"/><path class="pp-mark__c pp-mark__c--br" d="M56 39V54A2 2 0 0 1 54 56H39V50H50V39Z"/><path class="pp-mark__c pp-mark__c--bl" d="M25 56H10A2 2 0 0 1 8 54V39H14V50H25Z"/></g><circle class="pp-mark__dot" cx="32" cy="32" r="8" fill="#2ADCF0"/></svg><!--/MARK--></div>
+  </div>
+
+  <!-- ============ ЗНАК ============ -->
+  <section id="brand">
+    <div class="sec-head">
+      <h2 class="pp-h1">Знак и логотип</h2>
+      <p>Рамка обнаружения: четыре уголка вокруг объекта, через рамку проходит линия маршрута. Машина едет мимо и попутно отмечает люк или опору.</p>
+    </div>
+
+    <h3 class="blk">Варианты</h3>
+    <p class="rule">Цветной знак на navy и на светлом. На синем и на фото только одноцветный белый. Охранное поле = плечо уголка (17 из 64, около четверти высоты знака).</p>
+    <div class="grid" style="--min: 300px">
+      <figure class="logo-tile bg-navy"><img src="logo/logo-dark.svg" alt="Логотип на тёмном"><figcaption>logo-dark.svg</figcaption></figure>
+      <figure class="logo-tile bg-paper"><img src="logo/logo-light.svg" alt="Логотип на светлом"><figcaption>logo-light.svg</figcaption></figure>
+      <figure class="logo-tile bg-signal"><img src="logo/logo-on-signal.svg" alt="Логотип на синем"><figcaption>logo-on-signal.svg</figcaption></figure>
+      <figure class="logo-tile bg-navy2"><img src="logo/logo-mono-white.svg" alt="Логотип белый"><figcaption>logo-mono-white.svg</figcaption></figure>
+      <figure class="logo-tile bg-white"><img src="logo/logo-mono-navy.svg" alt="Логотип navy"><figcaption>logo-mono-navy.svg</figcaption></figure>
+      <figure class="logo-tile bg-navy"><img src="logo/mark.svg" alt="Знак" style="height:88px"><figcaption>mark.svg</figcaption></figure>
+    </div>
+
+    <h3 class="blk">Размеры</h3>
+    <p class="rule">Полный знак от 24 px, логотип от 96 px по ширине. В 16 px работает только фавикон: уголки толще, точка крупнее, линии маршрута нет.</p>
+    <div class="split">
+      <div class="demo sizes">
+        <figure><img src="logo/mark.svg" width="16" height="16" alt=""><span class="tok">16</span></figure>
+        <figure><img src="logo/mark.svg" width="24" height="24" alt=""><span class="tok">24</span></figure>
+        <figure><img src="logo/mark.svg" width="32" height="32" alt=""><span class="tok">32</span></figure>
+        <figure><img src="logo/mark.svg" width="64" height="64" alt=""><span class="tok">64</span></figure>
+        <figure><img src="logo/mark.svg" width="128" height="128" alt=""><span class="tok">128</span></figure>
+      </div>
+      <div class="demo stack">
+        <div class="row">
+          <figure style="margin:0" class="row"><img src="logo/favicon.svg" width="16" height="16" alt=""><img src="logo/favicon.svg" width="32" height="32" alt=""><img src="logo/favicon.svg" width="48" height="48" alt=""></figure>
+          <span class="tok">favicon.svg · сетка 32</span>
+        </div>
+        <div class="row" style="gap:0">
+          <div class="tabmock bg-white"><img src="logo/favicon.svg" alt="">Очередь | Попутно</div>
+          <div class="tabmock bg-navy2"><img src="logo/favicon.svg" alt="">Очередь | Попутно</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="blk">Превью для ссылок</h3>
+    <p class="rule">1200 × 630, текст переведён в кривые. Маршрут с объектами по пути, один в рамке детекции.</p>
+    <img class="og" src="logo/og-cover.svg" alt="Превью: Машины уже едут. Инфраструктуру проверяем попутно." loading="lazy">
+  </section>
+
+  <!-- ============ ЦВЕТ ============ -->
+  <section id="color">
+    <div class="sec-head">
+      <h2 class="pp-h1">Цвет</h2>
+      <p>Бренд холодный: navy, синий signal и редкий циан scan. Тёплые цвета означают только состояние объекта. Компоненты берут смысловые токены, палитра остаётся сырьём.</p>
+    </div>
+    <h3 class="blk">Палитра</h3>
+    <p class="rule">Опорный шаг отмечен полосой снизу. Имена: <span class="pp-mono">--p-{оттенок}-{шаг}</span>.</p>
+    <div id="ramps"></div>
+
+    <h3 class="blk">Смысловые токены</h3>
+    <p class="rule">Значения и контраст пересчитываются для текущей темы. Контраст считается к <span class="pp-mono">--surface-raised</span>, статусный текст к своей подложке. Порог для текста 4.5.</p>
+    <div class="sem" id="sem"></div>
+
+    <h3 class="blk">Статусы объекта</h3>
+    <p class="rule">У каждого статуса своя иконка и слово: цвет не единственный носитель. «Не наблюдается» обведён пунктиром и не путается с нормой.</p>
+    <div class="demo stack">
+      <div class="row">
+        <span class="pp-status pp-status--ok"><svg class="pp-status__icon"><use href="#i-status-ok"/></svg>Норма</span>
+        <span class="pp-status pp-status--suspected"><svg class="pp-status__icon"><use href="#i-status-suspected"/></svg>Проверить</span>
+        <span class="pp-status pp-status--defect"><svg class="pp-status__icon"><use href="#i-status-defect"/></svg>Дефект</span>
+        <span class="pp-status pp-status--critical"><svg class="pp-status__icon"><use href="#i-status-critical"/></svg>Критично</span>
+        <span class="pp-status pp-status--not-observed"><svg class="pp-status__icon"><use href="#i-status-not-observed"/></svg>Не наблюдается: снег</span>
+      </div>
+      <div class="row">
+        <span class="pp-status pp-status--sm pp-status--ok"><svg class="pp-status__icon"><use href="#i-status-ok"/></svg>Норма</span>
+        <span class="pp-status pp-status--sm pp-status--suspected"><svg class="pp-status__icon"><use href="#i-status-suspected"/></svg>Проверить</span>
+        <span class="pp-status pp-status--sm pp-status--defect"><svg class="pp-status__icon"><use href="#i-status-defect"/></svg>Дефект</span>
+        <span class="pp-status pp-status--sm pp-status--critical"><svg class="pp-status__icon"><use href="#i-status-critical"/></svg>Критично</span>
+        <span class="pp-status pp-status--sm pp-status--not-observed"><svg class="pp-status__icon"><use href="#i-status-not-observed"/></svg>Не наблюдается</span>
+        <span class="top__sep"></span>
+        <span class="pp-dot pp-dot--ok"></span><span class="pp-dot pp-dot--suspected"></span><span class="pp-dot pp-dot--defect"></span><span class="pp-dot pp-dot--critical"></span><span class="pp-dot pp-dot--not-observed"></span>
+        <span class="tok">.pp-dot для карты</span>
+      </div>
+      <div class="row">
+        <span class="pp-sev pp-sev--low" data-level="1"><span class="pp-sev__bars"><i></i><i></i><i></i><i></i></span>Низкая</span>
+        <span class="pp-sev pp-sev--medium" data-level="2"><span class="pp-sev__bars"><i></i><i></i><i></i><i></i></span>Средняя</span>
+        <span class="pp-sev pp-sev--high" data-level="3"><span class="pp-sev__bars"><i></i><i></i><i></i><i></i></span>Высокая</span>
+        <span class="pp-sev pp-sev--critical" data-level="4"><span class="pp-sev__bars"><i></i><i></i><i></i><i></i></span>Критичная</span>
+        <span class="tok">опасность дефекта: столбики + цвет</span>
+      </div>
+    </div>
+
+    <h3 class="blk">Графики</h3>
+    <p class="rule">Серый для всего и один акцент signal для того, о чём говорим. Статусные цвета только там, где столбик и есть статус.</p>
+    <div class="demo">
+      <svg viewBox="0 0 560 160" width="100%" style="max-width:560px;display:block" role="img" aria-label="Пример: доля сомнительных кадров по выездам, выезд 4 выделен">
+        <g style="stroke: var(--chart-grid)"><path d="M40 20H550M40 60H550M40 100H550"/></g>
+        <path d="M40 140H550" style="stroke: var(--chart-axis)"/>
+        <g style="fill: var(--chart-series)">
+          <rect x="60" y="80" width="56" height="60" rx="2"/><rect x="160" y="60" width="56" height="80" rx="2"/><rect x="260" y="96" width="56" height="44" rx="2"/>
+          <rect x="460" y="88" width="56" height="52" rx="2"/>
+        </g>
+        <rect x="360" y="30" width="56" height="110" rx="2" style="fill: var(--chart-accent)"/>
+        <g style="fill: var(--chart-label); font: 12px var(--font-mono)">
+          <text x="88" y="156" text-anchor="middle">1</text><text x="188" y="156" text-anchor="middle">2</text><text x="288" y="156" text-anchor="middle">3</text><text x="388" y="156" text-anchor="middle" style="fill: var(--text-primary)">4</text><text x="488" y="156" text-anchor="middle">5</text>
+          <text x="388" y="22" text-anchor="middle" style="fill: var(--text-primary)">[ДАННЫЕ]</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ============ ТИПОГРАФИКА ============ -->
+  <section id="type">
+    <div class="sec-head">
+      <h2 class="pp-h1">Типографика</h2>
+      <p>Unbounded для обложек, заголовков разделов, KPI и логотипа, только от 20 px. Golos Text для интерфейса и текста. JetBrains Mono для ID, координат, уверенности и времени. Цифры табличные.</p>
+    </div>
+    <div class="fonts">
+      <div class="pp-card font-card"><span class="tok">--font-display · 600</span><div class="big" style="font-family:var(--font-display);font-weight:600;letter-spacing:-0.04em">Аа</div><div class="pp-caption pp-secondary">Unbounded · OFL · заголовки, KPI, логотип</div></div>
+      <div class="pp-card font-card"><span class="tok">--font-sans · 400–700</span><div class="big" style="font-weight:600">Аа</div><div class="pp-caption pp-secondary">Golos Text · OFL · интерфейс и текст</div></div>
+      <div class="pp-card font-card"><span class="tok">--font-mono · 400–600</span><div class="big pp-mono" style="font-weight:500">0.95</div><div class="pp-caption pp-secondary">JetBrains Mono · OFL · ID, время, уверенность</div></div>
+    </div>
+    <div style="margin-top: var(--space-8)">
+      <div class="type-row"><div><span class="tok">.pp-display</span><span class="tok">30–72 / 1.08 / −0.035em</span></div><div class="pp-display">Машины уже едут</div></div>
+      <div class="type-row"><div><span class="tok">.pp-h1</span><span class="tok">32–48 / 1.15 / −0.025em</span></div><div class="pp-h1">Очередь проверки</div></div>
+      <div class="type-row"><div><span class="tok">.pp-h2</span><span class="tok">28 / 1.25 / −0.02em</span></div><div class="pp-h2">Объект MH-0142</div></div>
+      <div class="type-row"><div><span class="tok">.pp-h3</span><span class="tok">20 / 1.3 · Golos 600</span></div><div class="pp-h3">Открытый люк, ул. Авиамоторная, 8</div></div>
+      <div class="type-row"><div><span class="tok">.pp-title</span><span class="tok">18 / 1.35 · 600</span></div><div class="pp-title">Опора POLE-0037: наклон</div></div>
+      <div class="type-row"><div><span class="tok">.pp-body</span><span class="tok">16 / 1.55</span></div><div class="pp-body" style="max-width:62ch">Камера служебной машины сняла люк в 10:42. Модель нашла открытую крышку с уверенностью 0.95. Диспетчер подтвердил, наряд ушёл бригаде.</div></div>
+      <div class="type-row"><div><span class="tok">.pp-body-sm</span><span class="tok">14 / 1.45 · интерфейс</span></div><div class="pp-body-sm">Следующий проезд мимо объекта подтвердит ремонт.</div></div>
+      <div class="type-row"><div><span class="tok">.pp-label</span><span class="tok">13 / 1.3 · 600</span></div><div class="pp-label">Создать наряд</div></div>
+      <div class="type-row"><div><span class="tok">.pp-caption</span><span class="tok">12 / 1.4</span></div><div class="pp-caption pp-secondary">26.11 10:42 · уверенность 0.95 · выезд 3</div></div>
+      <div class="type-row"><div><span class="tok">.pp-micro</span><span class="tok">11 / 1.3 · +0.04em</span></div><div class="pp-micro pp-muted">Статус объекта</div></div>
+      <div class="type-row"><div><span class="tok">.pp-kpi__value</span><span class="tok">36–56 / 1 · Unbounded</span></div><div class="pp-kpi__value">20–100<span class="pp-kpi__unit">км за выезд</span></div></div>
+      <div class="type-row"><div><span class="tok">.pp-mono</span><span class="tok">ID, координаты, время</span></div><div class="pp-mono">MH-0142 · 55.7512 N 37.7180 E · 0.95 · 10:42:07</div></div>
+    </div>
+  </section>
+
+  <!-- ============ ОТСТУПЫ, ФОРМЫ, ДВИЖЕНИЕ ============ -->
+  <section id="space">
+    <div class="sec-head">
+      <h2 class="pp-h1">Отступы, формы, движение</h2>
+      <p>Шаг 4. Радиусы сдержанные, как у прибора. Поверхности плоские, между ними линия 1 px; тень только у того, что плавает.</p>
+    </div>
+    <div class="split">
+      <div class="demo">
+        <div id="spaces"></div>
+      </div>
+      <div class="stack">
+        <div class="demo row" style="gap: var(--space-4)">
+          <div class="stack" style="align-items:center"><div class="radius-tile" style="border-radius:var(--radius-xs)"></div><span class="tok">xs 4</span></div>
+          <div class="stack" style="align-items:center"><div class="radius-tile" style="border-radius:var(--radius-md)"></div><span class="tok">md 8</span></div>
+          <div class="stack" style="align-items:center"><div class="radius-tile" style="border-radius:var(--radius-lg)"></div><span class="tok">lg 12</span></div>
+          <div class="stack" style="align-items:center"><div class="radius-tile" style="border-radius:var(--radius-xl)"></div><span class="tok">xl 16</span></div>
+        </div>
+        <div class="demo row" style="gap: var(--space-5)">
+          <div class="shadow-tile" style="box-shadow:var(--shadow-ring)"><span class="tok">ring</span></div>
+          <div class="shadow-tile" style="box-shadow:var(--shadow-float)"><span class="tok">float</span></div>
+          <div class="shadow-tile" style="box-shadow:var(--shadow-overlay);background:var(--surface-overlay)"><span class="tok">overlay</span></div>
+        </div>
+      </div>
+    </div>
+    <h3 class="blk">Кривые и длительности</h3>
+    <p class="rule">Ответ на клик короче 300 мс, выход короче входа, ease-in в интерфейсе нет. При «меньше движения» сдвиги и масштаб обнуляются, длинные анимации становятся мгновенными. Наведите, чтобы проиграть.</p>
+    <div class="demo motion-demo" id="motion">
+      <div class="ease-row"><span class="tok">--ease-out</span><div class="ease-track"><i style="transition: transform var(--dur-panel) var(--ease-out)"></i></div><span class="tok">вход, отклик</span></div>
+      <div class="ease-row"><span class="tok">--ease-in-out</span><div class="ease-track"><i style="transition: transform var(--dur-slow) var(--ease-in-out)"></i></div><span class="tok">перемещение</span></div>
+      <div class="ease-row"><span class="tok">--ease-drawer</span><div class="ease-track"><i style="transition: transform var(--dur-panel) var(--ease-drawer)"></i></div><span class="tok">панель</span></div>
+      <div class="ease-row"><span class="tok">--ease-route</span><div class="ease-track"><i style="transition: transform var(--dur-draw) var(--ease-route)"></i></div><span class="tok">маршрут, знак</span></div>
+      <p class="tok" style="margin: var(--space-3) 0 0">press 140 · release 110 · fast 160 · base 200 · panel 260 · slow 320 · mark 900 · stagger 40 · press-scale 0.97 · snap-scale 1.15</p>
+    </div>
+  </section>
+
+  <!-- ============ ИКОНКИ ============ -->
+  <section id="icons">
+    <div class="sec-head">
+      <h2 class="pp-h1">Иконки</h2>
+      <p>Один набор: сетка 24, штрих 1.75, круглые концы, цвет через currentColor. Спрайт <span class="pp-mono">icons.svg</span>, по одной в <span class="pp-mono">icons/</span>.</p>
+    </div>
+    <div class="icons" id="icon-grid"></div>
+  </section>
+
+  <!-- ============ КОМПОНЕНТЫ ============ -->
+  <section id="components">
+    <div class="sec-head">
+      <h2 class="pp-h1">Компоненты</h2>
+      <p>Только токены, префикс <span class="pp-mono">pp-</span>. Адреса и ID в образцах взяты как пример формата; количества, которых пока нет, помечены <span class="placeholder-data">[ДАННЫЕ]</span>.</p>
+    </div>
+
+    <h3 class="blk">Кнопки</h3>
+    <p class="rule">Основная одна на экран. Нажатие сжимает до 0.97, фокус рисует кольцо (циан на тёмном, синий на светлом), загрузка держит ширину.</p>
+    <div class="demo" style="overflow-x:auto">
+      <table class="matrix">
+        <thead><tr><th></th><th>Обычная</th><th>Наведение</th><th>Нажатие</th><th>Фокус</th><th>Загрузка</th><th>Неактивна</th></tr></thead>
+        <tbody id="btn-matrix"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top: var(--space-4)">
+      <button class="pp-btn pp-btn--primary pp-btn--sm">Компактная 32</button>
+      <button class="pp-btn pp-btn--primary">Обычная 40</button>
+      <button class="pp-btn pp-btn--primary pp-btn--lg">Крупная 48</button>
+      <button class="pp-btn pp-btn--secondary pp-btn--icon" aria-label="Фильтр"><svg class="pp-icon"><use href="#i-filter"/></svg></button>
+      <button class="pp-btn pp-btn--ghost pp-btn--icon" aria-label="Закрыть"><svg class="pp-icon"><use href="#i-close"/></svg></button>
+    </div>
+
+    <h3 class="blk">Рамка детекции</h3>
+    <p class="rule">Уголки вокруг найденного объекта и бирка «что · уверенность». Циан: модель видит объект. Оранжевый: найден дефект. Рамка лежит на снимке, поэтому одинакова в обеих темах.</p>
+    <div class="split">
+      <figure class="pp-detect scene">
+        <svg viewBox="0 0 640 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs><linearGradient id="asph" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: var(--p-slate-700)"/><stop offset="1" style="stop-color: var(--p-slate-850)"/></linearGradient></defs>
+          <rect width="640" height="400" style="fill: url(#asph)"/>
+          <path d="M0 120 L640 90 L640 0 L0 0Z" style="fill: var(--p-slate-500)"/>
+          <path d="M0 120 L640 90" style="stroke: var(--p-slate-300); stroke-width: 6"/>
+          <path d="M80 330 L560 300" style="stroke: var(--p-slate-400); stroke-width: 4; stroke-dasharray: 40 30; opacity: .5"/>
+          <ellipse cx="300" cy="230" rx="78" ry="30" style="fill: var(--p-slate-900)"/>
+          <ellipse cx="300" cy="226" rx="70" ry="25" style="fill: var(--p-slate-600)"/>
+          <path d="M248 222h104M244 230h112" style="stroke: var(--p-slate-700); stroke-width: 3"/>
+        </svg>
+        <span class="pp-detect__box" style="--x:33%;--y:43%;--w:29%;--h:27%"><span class="pp-detect__tag">Люк закрыт · <b>0.97</b></span></span>
+        <figcaption class="pp-detect__caption"><span>MH-0142</span><span>27.11 08:15</span></figcaption>
+      </figure>
+      <figure class="pp-detect scene">
+        <svg viewBox="0 0 640 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="640" height="400" style="fill: url(#asph)"/>
+          <path d="M0 120 L640 90 L640 0 L0 0Z" style="fill: var(--p-slate-500)"/>
+          <path d="M0 120 L640 90" style="stroke: var(--p-slate-300); stroke-width: 6"/>
+          <ellipse cx="300" cy="232" rx="78" ry="30" style="fill: var(--p-navy-1000)"/>
+          <ellipse cx="392" cy="214" rx="70" ry="25" style="fill: var(--p-slate-600)"/>
+          <path d="M340 210h104M336 218h112" style="stroke: var(--p-slate-700); stroke-width: 3"/>
+        </svg>
+        <span class="pp-detect__box pp-detect__box--defect pp-detect__box--enter" style="--x:33%;--y:44%;--w:29%;--h:26%"><span class="pp-detect__tag">Открытый люк · <b>0.95</b></span></span>
+        <figcaption class="pp-detect__caption"><span>MH-0142 · ул. Авиамоторная, 8</span><span>26.11 10:42</span></figcaption>
+      </figure>
+    </div>
+    <p class="note">Иллюстрация вместо снимка. В продукте под рамкой реальный кадр камеры.</p>
+
+    <h3 class="blk">Происхождение</h3>
+    <p class="rule">Система подсказывает, решает человек. Находку модели видно по уголкам, решение человека по сплошной плашке.</p>
+    <div class="demo row">
+      <span class="pp-prov pp-prov--model"><svg class="pp-icon"><use href="#i-frame"/></svg>Найдено моделью <span class="pp-prov__conf">0.95</span></span>
+      <span class="pp-prov pp-prov--human"><svg class="pp-icon"><use href="#i-user-check"/></svg>Подтверждено человеком</span>
+      <span class="pp-badge">12</span><span class="pp-badge pp-badge--accent">новое</span>
+    </div>
+
+    <h3 class="blk">Карточки и KPI</h3>
+    <div class="grid" style="--min: 300px">
+      <article class="pp-card obj-card">
+        <figure class="pp-detect">
+          <svg viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="display:block;width:100%;height:100%">
+            <rect width="640" height="360" style="fill: url(#asph)"/>
+            <ellipse cx="300" cy="200" rx="90" ry="34" style="fill: var(--p-navy-1000)"/>
+            <ellipse cx="400" cy="180" rx="80" ry="28" style="fill: var(--p-slate-600)"/>
+          </svg>
+          <span class="pp-detect__box pp-detect__box--defect pp-detect__box--below" style="--x:30%;--y:42%;--w:35%;--h:30%"><span class="pp-detect__tag">Открытый люк · <b>0.95</b></span></span>
+        </figure>
+        <div class="pp-card__head">
+          <div><div class="pp-id">MH-0142</div><h4 class="pp-card__title">Открытый люк</h4></div>
+          <span class="pp-status pp-status--critical pp-status--pulse"><svg class="pp-status__icon"><use href="#i-status-critical"/></svg>Критично</span>
+        </div>
+        <dl class="dl"><dt>Адрес</dt><dd>ул. Авиамоторная, 8</dd><dt>Проезд</dt><dd>26.11 10:42</dd><dt>Уверенность</dt><dd>0.95</dd></dl>
+        <div class="pp-card__foot">
+          <button class="pp-btn pp-btn--primary pp-btn--sm">Создать наряд</button>
+          <button class="pp-btn pp-btn--ghost pp-btn--sm">Открыть объект</button>
+        </div>
+      </article>
+      <div class="stack">
+        <div class="pp-kpi pp-kpi--accent">
+          <span class="pp-kpi__label">Камера проезжает за выезд</span>
+          <span class="pp-kpi__value">20–100<span class="pp-kpi__unit">км</span></span>
+          <span class="pp-kpi__delta">Источник: профильный вебинар МГТС, слайд 4</span>
+        </div>
+        <div class="pp-kpi">
+          <span class="pp-kpi__label">Объектов в очереди проверки</span>
+          <span class="pp-kpi__value"><span class="placeholder-data" style="font-size:var(--text-h2-size)">[ДАННЫЕ]</span></span>
+          <span class="pp-kpi__delta pp-kpi__delta--down"><svg class="pp-icon"><use href="#i-arrow-right"/></svg>за сутки</span>
+        </div>
+      </div>
+      <div class="pp-card" aria-busy="true">
+        <span class="pp-skeleton pp-skeleton--block"></span>
+        <span class="pp-skeleton pp-skeleton--title"></span>
+        <span class="pp-skeleton pp-skeleton--text" style="width:90%"></span>
+        <span class="pp-skeleton pp-skeleton--text" style="width:70%"></span>
+        <span class="tok">.pp-skeleton · после 200 мс</span>
+      </div>
+    </div>
+
+    <h3 class="blk">Поля, сегменты, вкладки</h3>
+    <div class="split">
+      <div class="demo stack">
+        <label class="pp-field"><span class="pp-field__label">Поиск объекта</span>
+          <span class="pp-search"><svg class="pp-search__icon"><use href="#i-search"/></svg><input class="pp-input" placeholder="Адрес или ID, например MH-0142"><span class="pp-kbd">/</span></span>
+        </label>
+        <label class="pp-field"><span class="pp-field__label">Статус</span>
+          <span class="pp-select"><select><option>Все статусы</option><option>Критично</option><option>Дефект</option><option>Проверить</option></select><svg class="pp-select__chevron"><use href="#i-chevron-down"/></svg></span>
+        </label>
+        <label class="pp-field" data-invalid="true"><span class="pp-field__label">Координаты</span>
+          <input class="pp-input pp-input--mono" value="55.7512 37.71" aria-invalid="true">
+          <span class="pp-field__hint">Нужны широта и долгота через запятую: 55.7512, 37.7180</span>
+        </label>
+      </div>
+      <div class="demo stack" style="gap: var(--space-6)">
+        <div class="pp-segmented" role="group" aria-label="Вид">
+          <button class="pp-segmented__item" aria-pressed="true"><svg class="pp-icon"><use href="#i-queue"/></svg>Очередь</button>
+          <button class="pp-segmented__item" aria-pressed="false"><svg class="pp-icon"><use href="#i-map-pin"/></svg>Карта</button>
+          <button class="pp-segmented__item" aria-pressed="false"><svg class="pp-icon"><use href="#i-list"/></svg>Объекты</button>
+        </div>
+        <div class="pp-tabs" role="tablist">
+          <button class="pp-tab" role="tab" aria-selected="true">Очередь <span class="pp-tab__count">12</span></button>
+          <button class="pp-tab" role="tab" aria-selected="false">Наряды <span class="pp-tab__count">3</span></button>
+          <button class="pp-tab" role="tab" aria-selected="false">Проверено</button>
+          <button class="pp-tab" role="tab" aria-selected="false">История</button>
+        </div>
+        <div class="row">
+          <span class="pp-tooltip">Уверенность модели от 0 до 1 <span class="pp-kbd">?</span></span>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="blk">Таблица</h3>
+    <p class="rule">Плотная, строка 44 px (36 в режиме --dense). ID моноширинным, числа выровнены вправо и табличные.</p>
+    <div class="pp-table-wrap">
+      <table class="pp-table">
+        <thead><tr><th>ID</th><th>Объект</th><th>Адрес</th><th>Статус</th><th class="pp-table__num">Уверенность</th><th class="pp-table__num">Проезд</th></tr></thead>
+        <tbody>
+          <tr aria-selected="true"><td><span class="pp-id">MH-0142</span></td><td class="pp-table__main">Колодец</td><td>ул. Авиамоторная, 8</td><td><span class="pp-status pp-status--sm pp-status--critical"><svg class="pp-status__icon"><use href="#i-status-critical"/></svg>Критично</span></td><td class="pp-table__num">0.95</td><td class="pp-table__num">26.11 10:42</td></tr>
+          <tr><td><span class="pp-id">POLE-0037</span></td><td class="pp-table__main">Опора</td><td>шоссе Энтузиастов, 21</td><td><span class="pp-status pp-status--sm pp-status--defect"><svg class="pp-status__icon"><use href="#i-status-defect"/></svg>Дефект</span></td><td class="pp-table__num">0.81</td><td class="pp-table__num">26.11 10:51</td></tr>
+          <tr><td><span class="pp-id">MH-0157</span></td><td class="pp-table__main">Колодец</td><td>ул. Лефортовский Вал, 3</td><td><span class="pp-status pp-status--sm pp-status--suspected"><svg class="pp-status__icon"><use href="#i-status-suspected"/></svg>Проверить</span></td><td class="pp-table__num">0.58</td><td class="pp-table__num">26.11 11:03</td></tr>
+          <tr><td><span class="pp-id">POLE-0041</span></td><td class="pp-table__main">Опора</td><td>ул. Золоторожский Вал, 11</td><td><span class="pp-status pp-status--sm pp-status--not-observed"><svg class="pp-status__icon"><use href="#i-status-not-observed"/></svg>Не наблюдается</span></td><td class="pp-table__num pp-muted">нет данных</td><td class="pp-table__num">26.11 11:09</td></tr>
+          <tr><td><span class="pp-id">MH-0163</span></td><td class="pp-table__main">Колодец</td><td>ул. Авиамоторная, 12</td><td><span class="pp-status pp-status--sm pp-status--ok"><svg class="pp-status__icon"><use href="#i-status-ok"/></svg>Норма</span></td><td class="pp-table__num">0.97</td><td class="pp-table__num">26.11 11:12</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="blk">Линия маршрута и история объекта</h3>
+    <p class="rule">Тонкая линия маршрута работает разделителем, прогрессом и таймлайном. Узлы окрашены статусом объекта на этом проезде.</p>
+    <div class="split">
+      <div class="demo stack">
+        <div class="pp-route pp-route--accent pp-route--draw">
+          <span class="pp-route__node pp-route__node--ok" style="--at:8%"></span>
+          <span class="pp-route__node pp-route__node--ok" style="--at:28%"></span>
+          <span class="pp-route__node pp-route__node--suspected" style="--at:47%"></span>
+          <span class="pp-route__node pp-route__node--defect pp-route__node--filled" style="--at:66%"></span>
+          <span class="pp-route__node pp-route__node--ok" style="--at:88%"></span>
+        </div>
+        <span class="tok">.pp-route --accent --draw + .pp-route__node</span>
+        <div style="margin-top: var(--space-4)">
+          <div class="row" style="justify-content:space-between;margin-bottom:var(--space-2)"><span class="pp-label">Разбор выезда</span><span class="pp-mono pp-caption pp-secondary"><span class="placeholder-data">[ДАННЫЕ]</span> кадров</span></div>
+          <div class="pp-progress" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"><div class="pp-progress__fill" style="--value:.62"></div></div>
+        </div>
+        <hr class="pp-route">
+        <span class="tok">hr.pp-route: разделитель</span>
+      </div>
+      <div class="pp-card">
+        <div class="pp-card__head"><div><div class="pp-id">MH-0142</div><h4 class="pp-card__title">История проездов</h4></div></div>
+        <ol class="pp-timeline">
+          <li class="pp-timeline__item pp-timeline__item--done"><span class="pp-timeline__node pp-timeline__node--not-observed"></span><div><div class="pp-timeline__time">24.11 09:20</div><div class="pp-timeline__text">Не наблюдается: снег</div></div></li>
+          <li class="pp-timeline__item pp-timeline__item--done"><span class="pp-timeline__node pp-timeline__node--defect"></span><div><div class="pp-timeline__time">26.11 10:42</div><div class="pp-timeline__text">Открытый люк</div><div class="pp-timeline__meta">найдено моделью · 0.95</div></div></li>
+          <li class="pp-timeline__item pp-timeline__item--done"><span class="pp-timeline__node"></span><div><div class="pp-timeline__time">26.11 10:44</div><div class="pp-timeline__text">Подтверждено диспетчером, наряд бригаде</div></div></li>
+          <li class="pp-timeline__item"><span class="pp-timeline__node pp-timeline__node--ok"></span><div><div class="pp-timeline__time">27.11 08:15</div><div class="pp-timeline__text">Следующий проезд: люк закрыт</div><div class="pp-timeline__meta">найдено моделью · 0.97</div></div></li>
+        </ol>
+      </div>
+    </div>
+
+    <h3 class="blk">Уведомления и пустое состояние</h3>
+    <div class="split">
+      <div class="demo stage-toasts">
+        <div class="pp-toast pp-toast--critical" role="alert">
+          <svg class="pp-toast__icon"><use href="#i-status-critical"/></svg>
+          <div><div class="pp-toast__title">Критично: открытый люк</div><div class="pp-toast__text">ул. Авиамоторная, 8 · <span class="pp-mono">0.95</span> · 10:42. В обход очереди.</div></div>
+          <button class="pp-btn pp-btn--secondary pp-btn--sm">Открыть</button>
+        </div>
+        <div class="pp-toast pp-toast--ok" role="status">
+          <svg class="pp-toast__icon"><use href="#i-check"/></svg>
+          <div><div class="pp-toast__title">Наряд создан</div><div class="pp-toast__text"><span class="pp-mono">MH-0142</span> · бригада 3</div></div>
+          <button class="pp-btn pp-btn--ghost pp-btn--icon pp-btn--sm" aria-label="Закрыть"><svg class="pp-icon"><use href="#i-close"/></svg></button>
+        </div>
+      </div>
+      <div class="pp-card pp-empty">
+        <span class="pp-empty__icon pp-corners"><svg class="pp-icon"><use href="#i-queue"/></svg></span>
+        <h4 class="pp-empty__title">В очереди пусто</h4>
+        <p class="pp-empty__text">Кадры последнего выезда разобраны. Новые появятся после следующего проезда.</p>
+        <div class="pp-empty__actions"><button class="pp-btn pp-btn--secondary pp-btn--sm"><svg class="pp-icon"><use href="#i-clock"/></svg>Показать историю</button></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Источник правды: <span class="pp-mono">brand/tokens.css</span>, <span class="pp-mono">brand/components.css</span>. Сборка логотипов и иконок: <span class="pp-mono">python3 logo/build_logo.py · tools/build_icons.py · tools/build_preview.py</span>. Команда [НАЗВАНИЕ] <!-- [TODO: имя команды] --></footer>
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  /* ---------- тема ---------- */
+  function current() { return root.getAttribute('data-theme') || 'system'; }
+  function mark() {
+    document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.themeSet === current()));
+    });
+  }
+  document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = b.dataset.themeSet;
+      if (t === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+      try { localStorage.setItem('pp-theme', t); } catch (e) {}
+      mark(); semantic();
+    });
+  });
+  mark();
+
+  /* ---------- знак ---------- */
+  var hm = document.getElementById('hero-mark');
+  document.getElementById('replay').addEventListener('click', function () {
+    hm.classList.remove('pp-mark-anim'); void hm.getBoundingClientRect(); hm.classList.add('pp-mark-anim');
+  });
+
+  /* ---------- палитра ---------- */
+  var cs = function (n, el) { return getComputedStyle(el || root).getPropertyValue(n).trim(); };
+  var scales = [
+    ['navy', 'основа', [50,100,200,300,400,500,600,700,800,850,900,925,950,1000], 950],
+    ['signal', 'бренд-синий', [50,100,200,300,400,500,550,600,700,800,900,950], 500],
+    ['scan', 'циан, редко', [50,100,200,300,400,500,600,700,800,900,950], 400],
+    ['slate', 'нейтрали', [0,25,50,100,200,300,400,500,600,700,800,850,900,950], 400],
+    ['ok', 'Норма', [50,100,200,300,400,500,600,700,800,900,950], 500],
+    ['suspected', 'Проверить', [50,100,200,300,400,500,600,700,800,900,950], 500],
+    ['defect', 'Дефект', [50,100,200,300,400,500,600,700,800,900,950], 500],
+    ['critical', 'Критично', [50,100,200,300,400,500,550,600,700,800,900,950], 500],
+    ['unseen', 'Не наблюдается', [50,100,200,300,400,500,600,700,800,900], 400]
+  ];
+  function hexLum(h) {
+    h = h.replace('#', ''); var c = [0, 2, 4].map(function (i) { var v = parseInt(h.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  var ramps = document.getElementById('ramps');
+  scales.forEach(function (s) {
+    var row = document.createElement('div'); row.className = 'ramp'; row.style.setProperty('--n', s[2].length);
+    row.innerHTML = '<div class="ramp__name">' + s[0] + '<span>' + s[1] + '</span></div>';
+    s[2].forEach(function (st) {
+      var name = '--p-' + s[0] + '-' + st, hex = cs(name), d = document.createElement('div');
+      d.className = 'sw' + (st === s[3] ? ' is-key' : ''); d.title = name + ' ' + hex;
+      d.style.background = 'var(' + name + ')';
+      d.style.color = hexLum(hex) > 0.36 ? 'var(--p-navy-950)' : 'var(--p-slate-0)';
+      d.innerHTML = '<span>' + st + '</span><span class="hex">' + hex.replace('#', '') + '</span>';
+      row.appendChild(d);
+    });
+    ramps.appendChild(row);
+  });
+
+  /* ---------- смысловые токены с живым контрастом ---------- */
+  var probe = document.createElement('div'); probe.style.display = 'none'; document.body.appendChild(probe);
+  function rgba(v) {
+    probe.style.color = ''; probe.style.color = v; var c = getComputedStyle(probe).color;
+    var m = c.match(/[\d.]+/g).map(Number); if (c.indexOf('color(') === 0) m = m.map(function (x, i) { return i < 3 ? x * 255 : x; });
+    return [m[0], m[1], m[2], m.length > 3 ? m[3] : 1];
+  }
+  function over(f, b) { var a = f[3]; return [f[0] * a + b[0] * (1 - a), f[1] * a + b[1] * (1 - a), f[2] * a + b[2] * (1 - a), 1]; }
+  function lum(c) { var x = c.slice(0, 3).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * x[0] + 0.7152 * x[1] + 0.0722 * x[2]; }
+  function cr(a, b) { var l1 = lum(a), l2 = lum(b); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); }
+  var groups = [
+    ['--surface-base'], ['--surface-raised'], ['--surface-sunken'], ['--surface-overlay'], ['--surface-selected'],
+    ['--text-primary', 't'], ['--text-secondary', 't'], ['--text-muted', 't'], ['--text-accent', 't'], ['--text-disabled'],
+    ['--accent'], ['--scan'], ['--focus-ring'], ['--border-strong'], ['--route-line'],
+    ['--status-ok-fg', 's', '--status-ok-bg'], ['--status-suspected-fg', 's', '--status-suspected-bg'], ['--status-defect-fg', 's', '--status-defect-bg'],
+    ['--status-critical-fg', 's', '--status-critical-bg'], ['--status-not-observed-fg', 's', '--status-not-observed-bg'],
+    ['--detect-frame'], ['--prov-model-fg', 's', '--prov-model-bg'], ['--chart-series'], ['--chart-accent']
+  ];
+  function semantic() {
+    var host = document.getElementById('sem'); host.innerHTML = '';
+    var raised = rgba('var(--surface-raised)');
+    groups.forEach(function (g) {
+      var c = rgba('var(' + g[0] + ')'), crTxt = '';
+      if (g[1]) {
+        var bg = g[2] ? over(rgba('var(' + g[2] + ')'), raised) : raised;
+        var r = cr(over(c, bg), bg); crTxt = '<span class="sem__cr ' + (r >= 4.5 ? 'ok' : 'bad') + '">' + r.toFixed(1) + '</span>';
+      }
+      var hex = '#' + c.slice(0, 3).map(function (v) { return Math.round(v).toString(16).padStart(2, '0'); }).join('').toUpperCase() + (c[3] < 1 ? ' · ' + Math.round(c[3] * 100) + '%' : '');
+      var row = document.createElement('div'); row.className = 'sem__row';
+      row.innerHTML = '<span class="sem__chip" style="background:var(' + (g[2] || g[0]) + ');' + (g[2] ? 'color:var(' + g[0] + ');display:grid;place-items:center;font:600 12px var(--font-sans)">Аа' : '">') + '</span><span><span class="sem__name">' + g[0] + '</span><br><span class="sem__val">' + hex + '</span></span>' + crTxt;
+      host.appendChild(row);
+    });
+  }
+  semantic();
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: light)').addEventListener('change', semantic);
+
+  /* ---------- отступы ---------- */
+  var sp = document.getElementById('spaces');
+  [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24].forEach(function (n) {
+    var d = document.createElement('div'); d.className = 'space-row';
+    d.innerHTML = '<span class="tok">--space-' + n + '</span><span class="tok">' + n * 4 + '</span><span class="bar" style="width:var(--space-' + n + ')"></span>';
+    sp.appendChild(d);
+  });
+  var mo = document.getElementById('motion');
+  mo.style.setProperty('--w', (mo.querySelector('.ease-track').getBoundingClientRect().width) + 'px');
+  if (/play/.test(location.search)) mo.classList.add('play');
+
+  /* ---------- иконки ---------- */
+  var ig = document.getElementById('icon-grid');
+  document.querySelectorAll('symbol[id^="i-"]').forEach(function (s) {
+    var n = s.id.slice(2), d = document.createElement('div');
+    d.className = 'icon-cell' + (n.indexOf('status-') === 0 ? ' st-' + n.slice(7) : '');
+    d.innerHTML = '<svg class="pp-icon pp-icon--lg"><use href="#' + s.id + '"/></svg><span>' + n + '</span>';
+    ig.appendChild(d);
+  });
+
+  /* ---------- матрица кнопок ---------- */
+  var variants = [['Основная', 'primary', 'Создать наряд'], ['Вторичная', 'secondary', 'Открыть объект'], ['Тихая', 'ghost', 'Пропустить'], ['Опасно', 'danger', 'Отклонить находку']];
+  var tb = document.getElementById('btn-matrix');
+  variants.forEach(function (v) {
+    var cls = 'pp-btn pp-btn--sm pp-btn--' + v[1];
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + v[0] + '<br><span class="tok">--' + v[1] + '</span></td>' +
+      '<td><button class="' + cls + '">' + v[2] + '</button></td>' +
+      '<td><button class="' + cls + '" style="background:var(--btn-bg-hover)' + (v[1] === 'ghost' ? ';color:var(--text-primary)' : '') + '">' + v[2] + '</button></td>' +
+      '<td><button class="' + cls + '" style="background:var(--btn-bg-press);transform:scale(var(--press-scale))">' + v[2] + '</button></td>' +
+      '<td><button class="' + cls + '" style="outline:var(--focus-ring-width) solid var(--focus-ring);outline-offset:var(--focus-ring-offset)">' + v[2] + '</button></td>' +
+      '<td><button class="' + cls + '" aria-busy="true"><span>' + v[2] + '</span></button></td>' +
+      '<td><button class="' + cls + '" disabled>' + v[2] + '</button></td>';
+    tb.appendChild(tr);
+  });
+})();
+</script>
+</body>
+</html>
