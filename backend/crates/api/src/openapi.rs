@@ -11,7 +11,7 @@ use utoipa::{
 };
 use utoipa_swagger_ui::{Config, SwaggerUi};
 
-use crate::{auth, files, frames, routes, AppState};
+use crate::{auth, datasets, files, frames, routes, AppState};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -33,6 +33,7 @@ use crate::{auth, files, frames, routes, AppState};
         routes::stats, files::quality, files::taxonomy,
         files::media,
         frames::upload, frames::list_frames, frames::get_frame,
+        datasets::import, datasets::list, datasets::get_one, datasets::export,
         routes::dev_inject_detection,
     ),
     modifiers(&BearerAuth),
@@ -43,6 +44,7 @@ use crate::{auth, files, frames, routes, AppState};
         (name = "review", description = "Очередь разбора и решения диспетчера"),
         (name = "stats", description = "Статистика, качество модели, таксономия"),
         (name = "frames", description = "Загрузка фото на анализ: файл в S3, событие в Kafka, вердикт модели за 1–3 с"),
+        (name = "datasets", description = "Датасет организаторов: zip на вход, прогресс и качество прогона, таблица результатов (XLSX/CSV) на выход"),
         (name = "files", description = "Фото: загруженные (S3) и из датасета"),
         (name = "dev", description = "Только для демо: синтетическое срабатывание"),
         (name = "system"),
@@ -90,10 +92,11 @@ mod tests {
             "/api/objects", "/api/objects/{id}", "/api/objects/{id}/history", "/api/objects/{id}/reviews",
             "/api/queue", "/api/stats", "/api/stream", "/api/dev/detections",
             "/api/media/{path}", "/api/quality", "/api/taxonomy", "/api/frames", "/api/frames/{id}",
+            "/api/datasets", "/api/datasets/{id}", "/api/frames/export",
         ] {
             assert!(paths.iter().any(|x| x == p), "{p} missing from OpenAPI; have {paths:?}");
         }
-        assert_eq!(paths.len(), 23, "{paths:?}");
+        assert_eq!(paths.len(), 26, "{paths:?}");
         serde_json::to_string(&doc).unwrap();
     }
 }

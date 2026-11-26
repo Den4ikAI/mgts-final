@@ -1,4 +1,5 @@
 mod auth;
+mod datasets;
 mod error;
 mod files;
 mod frames;

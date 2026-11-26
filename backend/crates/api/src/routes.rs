@@ -40,6 +40,7 @@ pub fn router(state: AppState) -> Router {
         .merge(crate::auth::routes::router())
         .merge(crate::files::router())
         .merge(crate::frames::router())
+        .merge(crate::datasets::router())
         .merge(crate::openapi::router())
         .with_state(state)
 }

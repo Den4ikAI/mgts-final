@@ -45,38 +45,44 @@ pub fn router() -> Router<AppState> {
 /// Photo and the model's verdict.
 #[derive(Serialize, sqlx::FromRow, ToSchema)]
 pub struct FrameRow {
-    id: Uuid,
+    pub id: Uuid,
     /// upload | vehicle | dataset
-    source: String,
+    pub source: String,
     /// Фото через API: `/api/media/store/<key>`
-    media_uri: String,
-    file_name: Option<String>,
-    uploaded_by: Option<String>,
-    object_id: Option<String>,
-    lat: Option<f64>,
-    lon: Option<f64>,
+    pub media_uri: String,
+    pub file_name: Option<String>,
+    pub uploaded_by: Option<String>,
+    pub object_id: Option<String>,
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
     /// queued | done | error
     #[schema(example = "done")]
-    status: String,
+    pub status: String,
     /// FrameAnalyzed: route, defect_type, severity, confidence, rationale…
     #[schema(value_type = Option<domain::FrameAnalyzed>)]
-    result: Option<Value>,
-    size_bytes: i64,
-    created_at: DateTime<Utc>,
-    analyzed_at: Option<DateTime<Utc>>,
+    pub result: Option<Value>,
+    pub size_bytes: i64,
+    pub created_at: DateTime<Utc>,
+    pub analyzed_at: Option<DateTime<Utc>>,
+    /// Прогон импорта датасета
+    pub batch_id: Option<Uuid>,
+    /// Разметка организаторов, если была
+    #[schema(value_type = Option<domain::GroundTruth>)]
+    pub truth: Option<Value>,
 }
 
 /// Frame + its verdict (if any). The verdict may fill in what the uploader did not
 /// know: object id (from the model run) and position (from EXIF).
-const SELECT: &str = "SELECT f.id, f.source, f.media_uri, f.file_name, f.uploaded_by,
+pub const SELECT: &str = "SELECT f.id, f.source, f.media_uri, f.file_name, f.uploaded_by,
         COALESCE(f.object_id, v.result->>'object_id') AS object_id,
         COALESCE(f.lat, (v.result->'position'->>'lat')::float8) AS lat,
         COALESCE(f.lon, (v.result->'position'->>'lon')::float8) AS lon,
-        COALESCE(v.status, 'queued') AS status, v.result, f.size_bytes, f.created_at, v.analyzed_at
+        COALESCE(v.status, 'queued') AS status, v.result, f.size_bytes, f.created_at, v.analyzed_at,
+        f.batch_id, f.truth
     FROM frames f LEFT JOIN frame_verdicts v ON v.frame_id = f.id";
 
 #[derive(Serialize, ToSchema)]
-struct Accepted {
+pub struct Accepted {
     frame_id: Uuid,
     file_name: Option<String>,
     media_uri: String,
@@ -97,7 +103,7 @@ struct UploadForm {
     lon: Option<f64>,
 }
 
-fn sniff(b: &[u8]) -> Option<(&'static str, &'static str)> {
+pub fn sniff(b: &[u8]) -> Option<(&'static str, &'static str)> {
     match b {
         [0xFF, 0xD8, 0xFF, ..] => Some(("image/jpeg", "jpg")),
         [0x89, b'P', b'N', b'G', ..] => Some(("image/png", "png")),
@@ -164,47 +170,80 @@ async fn upload(
 
     let mut out = Vec::with_capacity(checked.len());
     for (file_name, bytes, content_type, ext) in checked {
-        let sha = hex(&Sha256::digest(&bytes));
-        let key = format!("frames/{}/{sha}.{ext}", Utc::now().format("%Y/%m/%d"));
-        let duplicate: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM frames WHERE sha256 = $1)")
-            .bind(&sha)
-            .fetch_one(&s.db)
-            .await?;
-        s.storage.put(&key, &bytes, content_type).await.map_err(ApiError::Internal)?;
-
-        let ev = FrameIngested {
-            frame_id: Uuid::now_v7(),
-            source: "upload".into(),
-            image_uri: s.storage.uri(&key),
-            media_uri: format!("/api/media/store/{key}"),
-            sha256: sha,
-            content_type: content_type.into(),
-            size_bytes: bytes.len() as u64,
-            file_name: Some(file_name.chars().take(200).collect()),
+        let meta = FrameMeta {
+            source: "upload",
+            file_name: Some(file_name),
             uploaded_by: Some(user.0.login.clone()),
             object_id: object_id.clone(),
             position,
-            captured_at: None,
-            vehicle_id: None,
-            heading: None,
+            batch_id: None,
+            truth: None,
         };
-        // Write the row now so the uploader sees "queued" at once; the
-        // projection inserts the same row on replay (idempotent).
-        insert_frame(&s.db, &ev).await?;
-        s.producer
-            .send(topics::FRAMES, &Envelope::new(ev.frame_id.to_string(), "api.upload", &ev))
-            .await?;
-        out.push(Accepted { frame_id: ev.frame_id, file_name: ev.file_name, media_uri: ev.media_uri, duplicate });
+        out.push(ingest(&s, &bytes, content_type, ext, meta).await?);
     }
     tracing::info!(by = %user.0.login, n = out.len(), "frames uploaded");
     Ok((StatusCode::ACCEPTED, Json(out)))
 }
 
+/// Who/what a stored photo is about; everything but the bytes.
+pub struct FrameMeta {
+    pub source: &'static str,
+    pub file_name: Option<String>,
+    pub uploaded_by: Option<String>,
+    pub object_id: Option<String>,
+    pub position: Option<GeoPoint>,
+    pub batch_id: Option<Uuid>,
+    pub truth: Option<domain::GroundTruth>,
+}
+
+/// Bytes → object storage, row → `frames`, event → `frames.ingested`.
+/// Shared by the upload form and the dataset import.
+pub async fn ingest(
+    s: &AppState,
+    bytes: &[u8],
+    content_type: &'static str,
+    ext: &'static str,
+    m: FrameMeta,
+) -> Result<Accepted, ApiError> {
+    let sha = hex(&Sha256::digest(bytes));
+    let key = format!("frames/{}/{sha}.{ext}", Utc::now().format("%Y/%m/%d"));
+    let duplicate: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM frames WHERE sha256 = $1)")
+        .bind(&sha)
+        .fetch_one(&s.db)
+        .await?;
+    s.storage.put(&key, bytes, content_type).await.map_err(ApiError::Internal)?;
+    let ev = FrameIngested {
+        frame_id: Uuid::now_v7(),
+        source: m.source.into(),
+        image_uri: s.storage.uri(&key),
+        media_uri: format!("/api/media/store/{key}"),
+        sha256: sha,
+        content_type: content_type.into(),
+        size_bytes: bytes.len() as u64,
+        file_name: m.file_name.map(|n| n.chars().take(300).collect()),
+        uploaded_by: m.uploaded_by,
+        object_id: m.object_id,
+        position: m.position,
+        captured_at: None,
+        vehicle_id: None,
+        heading: None,
+        batch_id: m.batch_id,
+        truth: m.truth,
+    };
+    // Write the row now so the uploader sees "queued" at once; the
+    // projection inserts the same row on replay (idempotent).
+    insert_frame(&s.db, &ev).await?;
+    s.producer
+        .send(topics::FRAMES, &Envelope::new(ev.frame_id.to_string(), format!("api.{}", m.source), &ev))
+        .await?;
+    Ok(Accepted { frame_id: ev.frame_id, file_name: ev.file_name, media_uri: ev.media_uri, duplicate })
+}
+
 pub async fn insert_frame(db: &sqlx::PgPool, f: &FrameIngested) -> sqlx::Result<()> {
     sqlx::query(
         "INSERT INTO frames (id, source, image_uri, media_uri, sha256, content_type, size_bytes,
-                             file_name, uploaded_by, object_id, lat, lon)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (id) DO NOTHING",
+                             file_name, uploaded_by, object_id, lat, lon, batch_id, truth)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT (id) DO NOTHING",
     )
     .bind(f.frame_id)
     .bind(&f.source)
@@ -218,6 +257,8 @@ pub async fn insert_frame(db: &sqlx::PgPool, f: &FrameIngested) -> sqlx::Result<
     .bind(&f.object_id)
     .bind(f.position.map(|p| p.lat))
     .bind(f.position.map(|p| p.lon))
+    .bind(f.batch_id)
+    .bind(f.truth.as_ref().map(serde_json::to_value).transpose().map_err(|e| sqlx::Error::Encode(Box::new(e)))?)
     .execute(db)
     .await?;
     Ok(())

@@ -110,6 +110,21 @@ pub struct FrameIngested {
     pub vehicle_id: Option<String>,
     /// Vehicle heading, degrees from north.
     pub heading: Option<f32>,
+    /// Dataset import (`POST /api/datasets`) this photo came from.
+    pub batch_id: Option<Uuid>,
+    /// Organizers' annotation, when the import had one.
+    pub truth: Option<GroundTruth>,
+}
+
+/// One row of the organizers' annotation, matched to a photo.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct GroundTruth {
+    /// Taxonomy class key mapped from the status text; `None` = not recognized.
+    pub class: Option<String>,
+    /// tksh | rsh, from the folder name
+    pub kind: Option<String>,
+    pub status: Option<String>,
+    pub description: Option<String>,
 }
 
 /// The model's verdict for one frame. Published for every frame, so an upload
@@ -124,6 +139,9 @@ pub struct FrameAnalyzed {
     pub defect_type: Option<String>,
     pub severity: Option<Severity>,
     pub confidence: f32,
+    /// The model's most likely class (also "ok" / "none") and its probability.
+    pub top_class: Option<String>,
+    pub top_p: Option<f32>,
     pub rationale: Option<String>,
     /// Set when a detection was also published to `detections.created`.
     pub detection_id: Option<Uuid>,
