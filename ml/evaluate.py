@@ -50,6 +50,8 @@ def main() -> None:
     ap.add_argument("--file-col", default="file")
     ap.add_argument("--label-col", required=True, help="column with the defect type")
     ap.add_argument("--status-col", help="optional: organizers' status column, cross-tabbed with our routes")
+    ap.add_argument("--kind-col", help="optional: true object kind (taxonomy kind key) → kind accuracy")
+    ap.add_argument("--desc-col", help="optional: organizers' damage description, shown next to mistakes")
     ap.add_argument("--map", action="append", default=[], help='"label value=class_key"')
     ap.add_argument("--taxonomy", default=str(dec.ROOT / "taxonomy.json"))
     args = ap.parse_args()
@@ -65,9 +67,10 @@ def main() -> None:
 
     no_label, unmapped, errors = 0, Counter(), 0
     pairs = []  # (truth, pred_top, rec)
+    kind_pairs = []  # (true kind, predicted kind)
     status_x = defaultdict(Counter)
     for rec in preds:
-        row = rows.get(lab.file_key(rec["file"]))
+        row = lab.lookup(rows, rec.get("rel"), rec["file"])
         if row is None:
             no_label += 1
             continue
@@ -80,6 +83,9 @@ def main() -> None:
         if truth is None:
             unmapped[row[args.label_col]] += 1
             continue
+        rec["_truth_desc"] = row.get(args.desc_col, "") if args.desc_col else ""
+        if args.kind_col and row.get(args.kind_col):
+            kind_pairs.append((row[args.kind_col], rec.get("kind")))
         pairs.append((truth, rec["top"], rec))
 
     n = len(pairs)
@@ -114,7 +120,7 @@ def main() -> None:
     sweep = []
     for auto_ok in [0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.01]:
         th = {**tax["thresholds"], "auto_ok": auto_ok}
-        routes = [dec.choose_route(r["top"], r["top_p"], r["object_p"], r["p_critical"], r["severity"], classes, th)
+        routes = [dec.choose_route(r["top"], r["top_p"], r["object_p"], r["p_critical"], r["severity"], classes, th, r.get("checks"))
                   for _, _, r in pairs]
         fl = [rt in ("review", "critical") for rt in routes]
         miss = sum(1 for (t, _, _), f in zip(pairs, fl) if not classes[t]["ok"] and not f)
@@ -147,10 +153,12 @@ def main() -> None:
         "threshold_sweep": sweep,
         "confusion": {"labels": keys, "names": [classes[k]["label"] for k in keys], "matrix": [[conf[t][p] for p in keys] for t in keys]},
         "missed_examples": [
-            {"file": r["file"], "truth": classes[t]["label"], "predicted": classes[r["top"]]["label"] if r["top"] else None,
+            {"file": r.get("rel") or r["file"], "truth": classes[t]["label"], "truth_desc": r.get("_truth_desc", ""), "predicted": classes[r["top"]]["label"] if r["top"] else None,
              "route": r["route"], "media_uri": r.get("media_uri"), "object_id": r.get("object_id")}
             for t, r in missed[:30]
         ],
+        "kind_accuracy": round(sum(a == b for a, b in kind_pairs) / len(kind_pairs), 4) if kind_pairs else None,
+        "kind_confusion": {f"{a}→{b}": c for (a, b), c in Counter(kind_pairs).items()} if kind_pairs else None,
         "status_vs_route": {s: dict(c) for s, c in status_x.items()} if args.status_col else None,
         "cost_usd": summary.get("cost_usd"),
         "wall_s": summary.get("wall_s"),
@@ -167,10 +175,10 @@ def main() -> None:
             w.writerow([classes[t]["label"], *[conf[t][p] for p in keys]])
     with open(args.run / "mistakes.csv", "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["file", "truth", "predicted", "p", "route", "rationale"])
+        w.writerow(["file", "truth", "truth_desc", "predicted", "p", "route", "rationale"])
         for t, p, r in pairs:
             if t != p:
-                w.writerow([r["file"], classes[t]["label"], classes[p]["label"] if p else "", f"{r['top_p']:.2f}", r["route"], r["rationale"]])
+                w.writerow([r.get("rel") or r["file"], classes[t]["label"], r.get("_truth_desc", ""), classes[p]["label"] if p else "", f"{r['top_p']:.2f}", r["route"], r["rationale"]])
 
     pct = lambda v: "—" if v is None else f"{v * 100:.1f}%"
     md = [
@@ -180,6 +188,7 @@ def main() -> None:
         f"- Точность по виду дефекта: **{pct(accuracy)}**, macro-F1 {macro_f1:.3f}",
         f"- Дефекты дошли до человека: **{pct(report['defect_recall'])}** ({caught} из {len(defects)}), пропущено {len(missed)}",
         f"- Ложные тревоги на норме: {pct(report['false_alarm_rate'])}",
+        *([f"- Тип объекта определён верно: {pct(report['kind_accuracy'])} {report['kind_confusion']}"] if kind_pairs else []),
         f"- Решено автоматически: **{pct(report['auto_share'])}**, из них верно {pct(report['auto_precision'])}",
         f"- Ушло людям: {pct(report['to_humans_share'])}",
         f"- Стоимость всего датасета ${summary.get('cost_usd', 0)} (${summary.get('cost_usd', 0) / max(1, len(preds)):.5f} за фото), "

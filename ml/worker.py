@@ -60,7 +60,7 @@ def main() -> None:
     ap.add_argument("--lon-col")
     ap.add_argument("--taxonomy", default=str(dec.ROOT / "taxonomy.json"))
     ap.add_argument("--workers", type=int, default=8)
-    ap.add_argument("--max-side", type=int, default=1280, help="downscale longest side (0 = send original)")
+    ap.add_argument("--max-side", type=int, default=2048, help="downscale longest side (0 = send original)")
     ap.add_argument("--limit", type=int, default=0, help="only first N images (dry runs)")
     ap.add_argument("--run-id", default=dt.datetime.now().strftime("%Y%m%d-%H%M%S"))
     ap.add_argument("--kafka", default="localhost:19092", help="brokers; '' = do not publish")
@@ -78,6 +78,7 @@ def main() -> None:
     out = dec.ROOT / "runs" / args.run_id
     out.mkdir(parents=True, exist_ok=True)
     client = dec.Client(tax, max_side=args.max_side)
+    kinds = tax["kind_question"]["classes"]
 
     producer = None
     if args.kafka:
@@ -89,7 +90,7 @@ def main() -> None:
 
     def work(p: pathlib.Path) -> dict:
         sha = sha256(p)
-        rec = {"file": p.name, "path": str(p), "sha256": sha}
+        rec = {"file": p.name, "rel": p.relative_to(args.images).as_posix(), "path": str(p), "sha256": sha}
         try:
             res, cached, latency = client.ask(p, sha)
             d = dec.interpret(res, tax)
@@ -110,7 +111,7 @@ def main() -> None:
             for fut in cf.as_completed(futures):
                 rec = fut.result()
                 p = futures[fut]
-                row = rows.get(lab.file_key(p.name), {})
+                row = lab.lookup(rows, rec["rel"], p.name) or {}
                 rec["object_id"] = (row.get(args.id_col) if args.id_col else None) or f"IMG-{p.stem}"
                 lat, lon = num(row.get(args.lat_col)) if args.lat_col else None, num(row.get(args.lon_col)) if args.lon_col else None
                 try:
@@ -126,7 +127,7 @@ def main() -> None:
                         "detection_id": str(det_id),
                         "frame_id": str(frame_id),
                         "object_id": rec["object_id"],
-                        "object_kind": rec["kind"] if rec["kind"] in ("cable_well", "dual_pole") else "cable_well",
+                        "object_kind": rec["kind"] if rec["kind"] in kinds else next(iter(kinds)),
                         "position": {"lat": lat, "lon": lon} if lat is not None and lon is not None else None,
                         "defect_type": rec["defect_type"],
                         "severity": rec["severity"],

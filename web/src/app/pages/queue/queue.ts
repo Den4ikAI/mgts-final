@@ -15,6 +15,7 @@ import { SEVERITY_LABEL, TaxonomyService } from '../../core/taxonomy';
       <article class="card" [class.critical]="d.severity === 'critical'">
         <header>
           <b class="mg-data">{{ d.object_id ?? 'Объект не сопоставлен' }}</b>
+          <span class="sev">{{ tax.kind(d.object_kind) }}</span>
           <span class="mg-pill" [class]="'mg-pill mg-pill--' + (d.severity === 'critical' ? 'critical' : 'suspected')">
             {{ tax.label(d.defect_type) }}
           </span>

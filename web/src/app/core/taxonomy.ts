@@ -5,6 +5,7 @@ import { catchError, of } from 'rxjs';
 
 interface Taxonomy {
   classes: Record<string, { label: string; kind: string | null; ok: boolean }>;
+  kind_question?: { labels?: Record<string, string> };
 }
 
 /** Class keys → Russian labels, from ml/taxonomy.json via /api/taxonomy (single source of truth). */
@@ -18,6 +19,10 @@ export class TaxonomyService {
   label(key: string | null | undefined): string {
     if (!key) return 'Норма';
     return this.classes()[key]?.label ?? key;
+  }
+  kind(key: string | null | undefined): string {
+    if (!key) return '—';
+    return this.data()?.kind_question?.labels?.[key] ?? key;
   }
 }
 

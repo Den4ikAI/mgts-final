@@ -23,7 +23,8 @@ interface Report {
   per_class: Record<string, { label: string; support: number; precision: number; recall: number; f1: number }>;
   confusion: { labels: string[]; names: string[]; matrix: number[][] };
   threshold_sweep: SweepRow[];
-  missed_examples: { file: string; truth: string; predicted: string | null; route: string; media_uri: string | null; object_id: string | null }[];
+  kind_accuracy?: number | null;
+  missed_examples: { file: string; truth: string; truth_desc?: string; predicted: string | null; route: string; media_uri: string | null; object_id: string | null }[];
   cost_usd: number | null;
   wall_s: number | null;
   avg_latency_s: number | null;
@@ -58,6 +59,7 @@ interface Quality { runs: { run_id: string; modified: string }[]; report: Report
         @if (r.api_errors) { · ошибок API {{ r.api_errors }} }
         · весь датасет {{ r.cost_usd | number: '1.2-4' }} $
         @if (r.avg_latency_s) { · ответ модели ≈ {{ r.avg_latency_s }} с на фото }
+        @if (r.kind_accuracy != null) { · тип объекта верно {{ r.kind_accuracy | percent: '1.0-0' }} }
       </p>
 
       <div class="kpis">
@@ -157,7 +159,7 @@ interface Quality { runs: { run_id: string; modified: string }[]; report: Report
             @for (m of r.missed_examples; track m.file) {
               <figure>
                 @if (m.media_uri) { <img [mgAuthSrc]="m.media_uri" [alt]="m.file" /> }
-                <figcaption><b>{{ m.truth }}</b> → {{ m.predicted ?? '—' }}<br /><span class="mg-data">{{ m.file }}</span></figcaption>
+                <figcaption><b>{{ m.truth }}</b> → {{ m.predicted ?? '—' }}<br />@if (m.truth_desc) { {{ m.truth_desc }}<br /> }<span class="mg-data">{{ m.file }}</span></figcaption>
               </figure>
             }
           </div>

@@ -28,10 +28,35 @@ def file_key(name: str) -> str:
     return pathlib.PurePath(name.replace("\\", "/")).stem.lower()
 
 
+def path_key(name: str) -> str:
+    """Relative path without extension, lowercase: 'A/001.JPG' -> 'a/001'."""
+    pp = pathlib.PurePosixPath(name.replace("\\", "/"))
+    return str(pp.with_suffix("")).lower()
+
+
 def index_by_file(rows: list[dict], file_col: str) -> dict[str, dict]:
+    """Keys: the relative path (when the table has one) and the bare name.
+    A bare name shared by several rows is dropped, so it can never pick the wrong row."""
     if rows and file_col not in rows[0]:
         raise SystemExit(f"column '{file_col}' not in table; columns: {list(rows[0])}")
-    return {file_key(r[file_col]): r for r in rows if r.get(file_col)}
+    idx, dup = {}, set()
+    for r in rows:
+        v = r.get(file_col)
+        if not v:
+            continue
+        if "/" in v or "\\" in v:
+            idx[path_key(v)] = r
+        k = file_key(v)
+        if k in idx and idx[k] is not r:
+            dup.add(k)
+        idx[k] = r
+    for k in dup:
+        idx.pop(k, None)
+    return idx
+
+
+def lookup(idx: dict[str, dict], rel: str | None, name: str) -> dict | None:
+    return (idx.get(path_key(rel)) if rel else None) or idx.get(file_key(name))
 
 
 def describe(path: str | pathlib.Path, sheet: str | None = None) -> None:

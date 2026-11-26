@@ -13,3 +13,5 @@ __pycache__/
 ml/.venv/
 ml/.cache/
 ml/runs/
+dataset/
+.ipynb_checkpoints/

@@ -8,7 +8,7 @@ export type ReviewDecision = 'confirm' | 'reject' | 'need_recapture';
 
 export interface InfraObject {
   id: string;
-  kind: 'cable_well' | 'dual_pole';
+  kind: string; // taxonomy kind key, e.g. tksh | rsh
   lat: number | null;
   lon: number | null;
   address: string | null;

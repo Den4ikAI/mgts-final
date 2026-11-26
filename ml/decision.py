@@ -65,12 +65,20 @@ def build_questions(tax: dict) -> dict:
             "instructions": tax["severity_question"]["instructions"],
             "criteria": [lvl["description"] for lvl in tax["severity_question"]["levels"]],
         },
+        # Optional independent yes/no checks, one per defect: a second opinion that
+        # is not squeezed into one probability budget with the other classes.
+        **{
+            f"check_{k}": {"type": "noul", "instructions": c["instructions"],
+                           "criteria": {"true": c["true"], "false": c["false"]}}
+            for k, c in tax.get("checks", {}).items()
+        },
     }
 
 
 def questions_hash(tax: dict) -> str:
     """Cache key part: only what is sent to the model (not thresholds)."""
-    blob = json.dumps([MODEL, tax["context"], build_questions(tax)], sort_keys=True, ensure_ascii=False)
+    refs = [[r["file"], r["caption"]] for r in tax.get("references", [])]
+    blob = json.dumps([MODEL, tax["context"], build_questions(tax)] + ([refs] if refs else []), sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
@@ -95,10 +103,21 @@ class Client:
         self.tax = tax
         self.questions = build_questions(tax)
         self.qhash = questions_hash(tax)
-        self.cache = cache_dir / self.qhash
+        self.cache = cache_dir / (self.qhash if max_side == 1280 else f"{self.qhash}-s{max_side}")
         self.cache.mkdir(parents=True, exist_ok=True)
         self.max_side = max_side
+        self.reference_state = self._references()
         self.key = api_key()
+
+    def _references(self) -> list:
+        """Labeled example photos shown before the photo to assess (few-shot).
+        Paths in taxonomy["references"] are relative to the repo root."""
+        out = []
+        for r in self.tax.get("references", []):
+            data, mime = image_bytes(ROOT.parent / r["file"], 1024)
+            out += [f"Reference example — {r['caption']}",
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(data).decode()}"}}]
+        return out
 
     def ask(self, path: pathlib.Path, sha: str) -> tuple[dict, bool, float]:
         """Returns (raw response, from_cache, latency_s). Retries 429/5xx/network."""
@@ -111,6 +130,8 @@ class Client:
             "model": MODEL,
             "state": [
                 self.tax["context"],
+                *self.reference_state,
+                *(["Photo to assess:"] if self.reference_state else []),
                 {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(data).decode()}"}},
             ],
             "questions": self.questions,
@@ -159,6 +180,7 @@ class Decision:
     p_critical: float
     probs: dict = field(default_factory=dict)
     rationale: str = ""
+    checks: dict = field(default_factory=dict)   # defect key -> P(yes) of its yes/no check
 
 
 def interpret(res: dict, tax: dict) -> Decision:
@@ -175,7 +197,7 @@ def interpret(res: dict, tax: dict) -> Decision:
 
     probs = {k: float(v) for k, v in (defect.get("probabilities") or {}).items()}
     if defect.get("type") != "choice" or not probs:
-        return Decision("review", None, None, 0.0, object_p, "cable_well", None, 0.0, 0.0, {},
+        return Decision("review", None, None, 0.0, object_p, next(iter(tax["kind_question"]["classes"])), None, 0.0, 0.0, {},
                         "Модель не ответила на вопрос о состоянии — нужна проверка человеком")
     ranked = sorted(probs.items(), key=lambda kv: -kv[1])
     top, top_p = ranked[0]
@@ -193,37 +215,49 @@ def interpret(res: dict, tax: dict) -> Decision:
     defects = [(k, p) for k, p in ranked if not classes[k]["ok"]]
     best_defect = defects[0][0] if defects else None
     kind = (classes[best_defect]["kind"] if not classes[top]["ok"] and best_defect else None) \
-        or kind_ans.get("choice") or "cable_well"
+        or kind_ans.get("choice") or next(iter(tax["kind_question"]["classes"]))
 
     def pct(k: str, p: float) -> str:
         return f"{classes[k]['label']} {round(p * 100)}%"
 
     summary = " · ".join(pct(k, p) for k, p in ranked[:3]) + f" · опасность {score:.1f}/{len(levels) - 1}"
 
-    route = choose_route(top, top_p, object_p, p_crit, severity, classes, th)
+    checks = {k: float(a[f"check_{k}"].get("noul", 0.0)) for k in tax.get("checks", {})
+              if a.get(f"check_{k}", {}).get("type") == "noul"}
+    summary += check_note(checks, tax)
+    route = choose_route(top, top_p, object_p, p_crit, severity, classes, th, checks)
+
+    def out(defect: str | None, sev: str | None, text: str) -> Decision:
+        return Decision(route, defect, top, top_p, object_p, kind, sev, score, p_crit, probs, text, checks)
+
     if route == "not_observed":
-        return Decision(route, None, top, top_p, object_p, kind, None, score, p_crit, probs,
-                        f"Объект не различим (уверенность {object_p:.2f}) · {summary}")
+        return out(None, None, f"Объект не различим (уверенность {object_p:.2f}) · {summary}")
     if route == "auto_ok":
-        return Decision(route, None, top, top_p, object_p, kind, None, score, p_crit, probs,
-                        f"Норма, подтверждено автоматически · {summary}")
+        return out(None, None, f"Норма, подтверждено автоматически · {summary}")
     if classes[top]["ok"]:
-        # Uncertain "fine": send the most likely defect to a human.
-        return Decision(route, best_defect, top, top_p, object_p, kind, severity, score, p_crit, probs,
-                        f"Модель не уверена, что всё в норме · {summary}")
-    return Decision(route, top, top, top_p, object_p, kind, severity, score, p_crit, probs, summary)
+        # Uncertain "fine": send the most suspicious defect to a human (a fired check wins).
+        fired = max(checks.items(), key=lambda kv: kv[1], default=(None, 0.0))
+        defect = fired[0] if fired[1] >= th.get("check_max", 1.01) else best_defect
+        return out(defect, severity, f"Модель не уверена, что всё в норме · {summary}")
+    return out(top, severity, summary)
 
 
 def choose_route(top: str, top_p: float, object_p: float, p_crit: float, severity: str | None,
-                 classes: dict, th: dict) -> str:
+                 classes: dict, th: dict, checks: dict | None = None) -> str:
     """Pure routing rule, also replayed by evaluate.py for the threshold sweep."""
     # Never suppress a visible defect: the object gate only applies when the model
     # itself leans to "nothing to report" (an open hatch has no cover to "see").
     if top == "none" or (classes[top]["ok"] and object_p < th["object_min"]):
         return "not_observed"
-    if classes[top]["ok"] and top_p >= th["auto_ok"] and p_crit < th["critical_prob"]:
+    check_hit = max((checks or {}).values(), default=0.0) >= th.get("check_max", 1.01)
+    if classes[top]["ok"] and top_p >= th["auto_ok"] and p_crit < th["critical_prob"] and not check_hit:
         return "auto_ok"
     return "critical" if severity == "critical" else "review"
+
+
+def check_note(checks: dict, tax: dict) -> str:
+    hits = [f"{tax['classes'][k]['label']} {round(p * 100)}%" for k, p in sorted(checks.items(), key=lambda kv: -kv[1]) if p >= 0.5]
+    return f" · проверки: {', '.join(hits)}" if hits else ""
 
 
 def as_dict(d: Decision) -> dict:
