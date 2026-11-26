@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Попутно | Материалы</title>
+<meta name="description" content="«Попутно»: брендбук, дека защиты и сайт-продукт. Мониторинг инфраструктуры МГТС с камер служебных машин.">
+<meta name="theme-color" content="#030E1C">
+<link rel="icon" href="brand/logo/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="brand/logo/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="brand/logo/apple-touch-icon.png">
+<link rel="manifest" href="brand/logo/site.webmanifest">
+<meta property="og:title" content="Попутно">
+<meta property="og:description" content="Машины уже едут. Инфраструктуру проверяем попутно.">
+<meta property="og:image" content="brand/logo/og-cover.png">
+<script>
+  /* Тема до первой отрисовки: ?theme= → система. Тёмная основная */
+  (function () { var t = new URLSearchParams(location.search).get('theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); })();
+</script>
+<link rel="stylesheet" href="brand/fonts/fonts.css">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="brand/components.css">
+<style>
+  /* Хаб материалов. Только var(--…) из brand/tokens.css */
+  html, body { overflow-x: clip; }
+  body { margin: 0; min-height: 100vh; background: var(--surface-base); }
+  .hub { max-width: 1120px; margin: 0 auto; padding: 0 var(--space-6) var(--space-16); }
+  @media (max-width: 30rem) { .hub { padding: 0 var(--space-4) var(--space-12); } }
+
+  /* Обложка: знак проигрывается, линия маршрута уходит за край экрана */
+  .cover { position: relative; padding: var(--space-20) 0 var(--space-12); }
+  .lockup { position: relative; display: flex; align-items: center; width: fit-content; }
+  .lockup::before, .lockup::after { content: ""; position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--route-line); opacity: 0.5; transform-origin: left center; animation: pp-draw-x var(--dur-draw) var(--ease-route) both; }
+  .lockup::before { right: 100%; width: 100vw; margin-right: var(--space-4); }
+  .lockup::after { left: 100%; width: 100vw; margin-left: var(--space-5); animation-delay: calc(var(--dur-mark) * 0.6); }
+  .lockup svg { height: clamp(56px, 4vw + 36px, 96px); width: auto; display: block; }
+  .promise { margin: var(--space-10) 0 0; font-family: var(--font-display); font-weight: var(--weight-display); font-size: clamp(1.5rem, 1rem + 2vw, 2.5rem); line-height: 1.15; letter-spacing: -0.025em; color: var(--text-primary); text-wrap: balance; }
+  .promise span { color: var(--text-accent); }
+  .descr { margin: var(--space-4) 0 0; max-width: 60ch; font-size: var(--text-body-size); line-height: var(--text-body-lh); color: var(--text-secondary); }
+  .meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
+
+  /* Три материала */
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); }
+  @media (max-width: 60rem) { .cards { grid-template-columns: minmax(0, 1fr); } }
+  .card { --corners-color: transparent; --corners-inset: -6px; position: relative; display: flex; flex-direction: column; border-radius: var(--radius-lg); background: var(--surface-raised); box-shadow: var(--shadow-ring); transition: var(--transition-control); }
+  .card::before { transition: opacity var(--dur-fast) var(--ease-out); opacity: 0; }
+  .card:hover, .card:focus-within { --corners-color: var(--scan); }
+  .card:hover::before, .card:focus-within::before { opacity: 1; }
+  .card__shot { display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--surface-sunken); box-shadow: inset 0 -1px 0 var(--border-subtle); }
+  .card__shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: left top; transition: transform var(--dur-slow) var(--ease-out); }
+  .card:hover .card__shot img { transform: scale(1.03); }
+  .card__body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-5); flex: 1; }
+  .card__eyebrow { font-family: var(--font-mono); font-size: var(--text-caption-size); color: var(--text-muted); letter-spacing: var(--tracking-mono); }
+  .card__title { margin: 0; font-family: var(--font-display); font-weight: var(--weight-display); font-size: 1.375rem; line-height: 1.2; letter-spacing: -0.02em; }
+  .card__title a { color: var(--text-primary); text-decoration: none; }
+  .card__title a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+  .card__title a:focus-visible { outline: none; }
+  .card:has(.card__title a:focus-visible) { box-shadow: var(--shadow-ring), 0 0 0 var(--focus-ring-offset) var(--surface-base), 0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--focus-ring); }
+  .card__text { margin: 0; font-size: var(--text-body-sm-size); line-height: var(--text-body-sm-lh); color: var(--text-secondary); }
+  .card__foot { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: auto; padding-top: var(--space-3); }
+  .card__foot .pp-btn { position: relative; z-index: 1; }
+  .card__path { margin-top: var(--space-1); font-family: var(--font-mono); font-size: var(--text-caption-size); color: var(--text-muted); }
+
+  /* Как запустить */
+  .run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: var(--space-8); margin-top: var(--space-16); padding: var(--space-8); border-radius: var(--radius-xl); background: var(--surface-raised); box-shadow: var(--shadow-ring); }
+  @media (max-width: 60rem) { .run { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); padding: var(--space-5); } }
+  .run h2 { margin: 0 0 var(--space-3); font-family: var(--font-display); font-weight: var(--weight-display); font-size: 1.5rem; letter-spacing: -0.02em; }
+  .run p { margin: 0; color: var(--text-secondary); font-size: var(--text-body-sm-size); line-height: var(--text-body-sm-lh); }
+  .run p + p { margin-top: var(--space-3); }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); counter-reset: s; }
+  .steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: var(--space-3); align-items: start; counter-increment: s; }
+  .steps li::before { content: counter(s); display: grid; place-items: center; width: 24px; height: 24px; margin-top: 6px; border-radius: 50%; font-family: var(--font-mono); font-size: var(--text-caption-size); color: var(--text-accent); box-shadow: inset 0 0 0 1.5px var(--route-line); }
+  .code { position: relative; display: flex; align-items: center; gap: var(--space-3); min-height: 40px; padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--surface-sunken); box-shadow: var(--shadow-ring); font-family: var(--font-mono); font-size: var(--text-body-sm-size); color: var(--text-primary); overflow-x: auto; }
+  .code code { flex: 1; white-space: pre; }
+  .code code i { font-style: normal; color: var(--text-muted); }
+  .steps small { display: block; margin-top: var(--space-1); color: var(--text-muted); font-size: var(--text-caption-size); }
+  .steps a { color: var(--text-link); }
+
+  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-12); padding-top: var(--space-5); box-shadow: inset 0 1px 0 var(--border-subtle); font-size: var(--text-caption-size); color: var(--text-muted); }
+  .foot a { color: var(--text-secondary); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .toast-host { position: fixed; left: 50%; bottom: var(--space-6); transform: translateX(-50%); z-index: var(--z-toast, 60); }
+  @media (prefers-reduced-motion: reduce) { .card__shot img { transition: none; } }
+</style>
+</head>
+<body class="pp-page">
+<!--SPRITE--><svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol></svg><!--/SPRITE-->
+<main class="hub">
+  <header class="cover">
+    <div class="lockup">
+      <button type="button" id="replay" aria-label="Проиграть знак" style="all:unset;cursor:pointer;display:block;border-radius:var(--radius-sm)"><!--LOGO--><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329.45 64" class="pp-logo pp-mark-anim" role="img" aria-label="Попутно"><g class="pp-mark__route" fill="#0A84E6"><path class="pp-mark__route-l" d="M3 29H21V35H0Z"/><path class="pp-mark__route-r" d="M43 29H64L61 35H43Z"/></g><g class="pp-mark__frame" fill="#0A84E6"><path class="pp-mark__c pp-mark__c--tl" d="M8 25V10A2 2 0 0 1 10 8H25V14H14V25Z"/><path class="pp-mark__c pp-mark__c--tr" d="M39 8H54A2 2 0 0 1 56 10V25H50V14H39Z"/><path class="pp-mark__c pp-mark__c--br" d="M56 39V54A2 2 0 0 1 54 56H39V50H50V39Z"/><path class="pp-mark__c pp-mark__c--bl" d="M25 56H10A2 2 0 0 1 8 54V39H14V50H25Z"/></g><circle class="pp-mark__dot" cx="32" cy="32" r="8" fill="#2ADCF0"/><path class="pp-logo__word" fill="#F5F8FB" d="M112.22 18V46H103.1V20.67L107.28 24.83H84.92L89.1 20.67V46H79.98V18ZM133.46 46.78Q128.16 46.78 124.18 44.92Q120.19 43.07 117.97 39.73Q115.74 36.39 115.74 32.01Q115.74 27.57 117.97 24.25Q120.19 20.93 124.18 19.07Q128.17 17.22 133.47 17.22Q138.77 17.22 142.75 19.07Q146.73 20.93 148.96 24.25Q151.18 27.57 151.18 32.01Q151.18 36.4 148.96 39.73Q146.73 43.07 142.75 44.92Q138.76 46.78 133.46 46.78ZM133.47 39.93Q136.13 39.93 138.02 38.97Q139.91 38.02 140.94 36.24Q141.96 34.46 141.96 32.01Q141.96 29.53 140.94 27.75Q139.91 25.98 138.02 25.02Q136.13 24.07 133.47 24.07Q130.84 24.07 128.93 25.02Q127.01 25.98 125.99 27.75Q124.97 29.53 124.97 32Q124.97 34.47 125.99 36.24Q127.01 38.02 128.93 38.97Q130.84 39.93 133.47 39.93ZM186.94 18V46H177.81V20.67L182 24.83H159.64L163.82 20.67V46H154.69V18ZM200.41 54.88Q197.47 54.88 195.17 54.16Q192.87 53.43 190.73 51.95V45.52Q192.93 46.92 194.87 47.54Q196.81 48.16 199.14 48.16Q201.18 48.16 202.74 47.27Q204.3 46.38 205.31 44.04L216.51 18H226.2L212.5 46.9Q211.12 49.85 209.19 51.6Q207.26 53.35 205.03 54.12Q202.79 54.88 200.41 54.88ZM201.46 43.81 189.33 18H199.38L210.3 43.81ZM235.4 21.16H244.52V46H235.4ZM224.51 18H255.4V24.93H224.51ZM258.05 18H267.15V46H258.05ZM281.39 18H290.49V46H281.39ZM263.27 28.3H284.9V35.13H263.27ZM311.73 46.78Q306.43 46.78 302.44 44.92Q298.46 43.07 296.23 39.73Q294.01 36.39 294.01 32.01Q294.01 27.57 296.23 24.25Q298.46 20.93 302.45 19.07Q306.43 17.22 311.73 17.22Q317.03 17.22 321.02 19.07Q325 20.93 327.23 24.25Q329.45 27.57 329.45 32.01Q329.45 36.4 327.23 39.73Q325 43.07 321.01 44.92Q317.03 46.78 311.73 46.78ZM311.73 39.93Q314.4 39.93 316.29 38.97Q318.18 38.02 319.2 36.24Q320.23 34.46 320.23 32.01Q320.23 29.53 319.2 27.75Q318.18 25.98 316.29 25.02Q314.4 24.07 311.73 24.07Q309.11 24.07 307.2 25.02Q305.28 25.98 304.26 27.75Q303.23 29.53 303.23 32Q303.23 34.47 304.26 36.24Q305.28 38.02 307.2 38.97Q309.11 39.93 311.73 39.93Z"/></svg><!--/LOGO--></button>
+    </div>
+    <h1 class="promise">Машины уже едут. <span>Инфраструктуру проверяем попутно.</span></h1>
+    <p class="descr">Мониторинг телекоммуникационных шкафов (ТКШ) и распределительных щитов (РЩ) МГТС по фото. Здесь три материала команды: брендбук, дека защиты и сам продукт.</p>
+    <div class="meta">
+      <span class="pp-badge pp-badge--accent">Кейс МГТС · Код города</span>
+      <span class="pp-badge">Финал 26.11.2026 · МТУСИ</span>
+      <span class="pp-badge">Команда [НАЗВАНИЕ]</span><!-- [TODO: имя команды] -->
+    </div>
+  </header>
+
+  <section class="cards" aria-label="Материалы">
+    <article class="card pp-corners">
+      <a class="card__shot" href="brand/" tabindex="-1" aria-hidden="true"><img src="assets/hub/brandbook.webp" alt="" width="960" height="600" loading="lazy"></a>
+      <div class="card__body">
+        <span class="card__eyebrow">01 · brand/</span>
+        <h2 class="card__title"><a href="brand/">Брендбук</a></h2>
+        <p class="card__text">Знак, цвет, шрифты, компоненты, экраны и голос. Отсюда дека и сайт берут токены.</p>
+        <div class="card__foot"><a class="pp-btn pp-btn--secondary pp-btn--sm" href="brand/tokens.css" download>tokens.css</a></div>
+      </div>
+    </article>
+    <article class="card pp-corners">
+      <a class="card__shot" href="deck/?track=3" tabindex="-1" aria-hidden="true"><img src="assets/hub/deck.webp" alt="" width="960" height="540" loading="lazy"></a>
+      <div class="card__body">
+        <span class="card__eyebrow">02 · deck/</span>
+        <h2 class="card__title"><a href="deck/?track=3">Дека защиты</a></h2>
+        <p class="card__text">Два трека из одного файла. Стрелки листают, цифры подставляются из numbers.json.</p>
+        <div class="card__foot">
+          <a class="pp-btn pp-btn--primary pp-btn--sm" href="deck/?track=3">3 минуты · 7 слайдов</a>
+          <a class="pp-btn pp-btn--secondary pp-btn--sm" href="deck/?track=5">5 минут · 10 слайдов</a>
+        </div>
+      </div>
+    </article>
+    <article class="card pp-corners">
+      <a class="card__shot" href="site/" tabindex="-1" aria-hidden="true"><img src="assets/hub/site.webp" alt="" width="960" height="600" loading="lazy"></a>
+      <div class="card__body">
+        <span class="card__eyebrow">03 · site/</span>
+        <h2 class="card__title"><a href="site/">Продукт</a></h2>
+        <p class="card__text">Очередь проверки с реальными фото ТКШ и РЩ из датасета, реестр, наряды и качество модели. Новые фото проверяет живая модель.</p>
+        <div class="card__foot"><a class="pp-btn pp-btn--secondary pp-btn--sm" href="site/#/queue">Очередь</a><a class="pp-btn pp-btn--secondary pp-btn--sm" href="site/#/quality">Качество модели</a></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="run" aria-labelledby="h-run">
+    <div>
+      <h2 id="h-run">Как запустить</h2>
+      <p>Сборки нет: нужен только Python 3 и браузер. Шрифты, иконки и токены лежат в папке, интернет не нужен.</p>
+      <p>Брендбук открывается и двойным щелчком по файлу. Дека и сайт читают JSON, поэтому им нужен локальный сервер.</p>
+    </div>
+    <ol class="steps">
+      <li><div><div class="code"><code><i>$</i> cd design2</code></div></div></li>
+      <li><div><div class="code"><code id="cmd"><i>$</i> python3 -m http.server 8000</code><button class="pp-btn pp-btn--ghost pp-btn--sm" type="button" data-copy="python3 -m http.server 8000">Скопировать</button></div><small>Порт занят? Подойдёт любой свободный: 8001, 8765.</small></div></li>
+      <li><div><div class="code"><code><a href="http://localhost:8000/">http://localhost:8000/</a></code></div><small>Дека: стрелки и пробел листают, <span class="pp-mono">?static</span> без анимации, <span class="pp-mono">?print</span> для PDF. Сайт с бэкендом: <span class="pp-mono">site/?source=api&amp;api=http://localhost:8080</span>.</small></div></li>
+    </ol>
+  </section>
+
+  <footer class="foot">
+    <span>«Попутно» · Кейс МГТС · Код города · 26.11.2026 · Команда [НАЗВАНИЕ]</span>
+    <span><a href="brand/">Брендбук</a> · <a href="deck/">Дека</a> · <a href="site/">Продукт</a></span>
+  </footer>
+</main>
+<div class="toast-host" id="toasts" aria-live="polite"></div>
+<script>
+  (function () {
+    var logo = document.querySelector('#replay svg');
+    document.getElementById('replay').addEventListener('click', function () {
+      logo.classList.remove('pp-mark-anim'); void logo.getBoundingClientRect(); logo.classList.add('pp-mark-anim');
+    });
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-copy]'); if (!b) return;
+      var text = b.getAttribute('data-copy');
+      var done = function () {
+        var t = document.createElement('div'); t.className = 'pp-toast'; t.setAttribute('role', 'status');
+        t.innerHTML = '<svg class="pp-toast__icon" aria-hidden="true"><use href="#i-check"/></svg><div><div class="pp-toast__title">Команда скопирована</div><div class="pp-toast__text pp-mono">python3 -m http.server 8000</div></div>';
+        document.getElementById('toasts').appendChild(t); setTimeout(function () { t.remove(); }, 2200);
+      };
+      if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, done);
+      else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (x) {} ta.remove(); done(); }
+    });
+  })();
+</script>
+</body>
+</html>

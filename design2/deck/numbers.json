@@ -1,0 +1,1210 @@
+{
+  "_about": {
+    "purpose": "Единственный источник цифр деки, речи, qa.md и demo-runbook.md. Пока value = null, слайд показывает плашку «[ДАННЫЕ] ключ», а речь говорит ключ. Финальная сборка не проходит, пока в placeholders остался null у ключа, который стоит на слайде или в речи.",
+    "fill_by": "Заполнено tools/build-data.py из ml/runs/dss-final2, 26.11 15:18",
+    "main_source": "GET /api/quality?run=final (поле report) = ml/runs/final/report.json",
+    "rounding": "Проценты до целого. Секунды до одного знака. Доллары до двух значащих цифр. Минуты до целого.",
+    "forbidden": "Цифры тестового прогона на 13 открытых картинках (ml/runs/test-scenes) в деку, речь и ответы не попадают: это проверка пайплайна на своей разметке, не качество модели."
+  },
+  "placeholders": {
+    "team.name": {
+      "value": null,
+      "unit": "текст",
+      "desc": "Название команды как при регистрации",
+      "source": "капитан команды, личный кабинет платформы"
+    },
+    "slot.express_s": {
+      "value": null,
+      "unit": "с",
+      "desc": "Время на одну команду на экспресс-защите, речь без вопросов",
+      "source": "объявление организаторов в УЛК-2"
+    },
+    "slot.superfinal_s": {
+      "value": null,
+      "unit": "с",
+      "desc": "Время на команду в суперфинале",
+      "source": "объявление организаторов"
+    },
+    "dataset.images": {
+      "value": 62,
+      "unit": "фото",
+      "desc": "Фото в датасете ДСС",
+      "source": "ml/runs/dss-final2/report.json images"
+    },
+    "dataset.labeled": {
+      "value": 61,
+      "unit": "фото",
+      "desc": "Фото с разметкой",
+      "source": "ml/runs/dss-final2/report.json evaluated"
+    },
+    "dataset.classes": {
+      "value": [
+        "Удовлетворительно",
+        "Повреждение ЛКП",
+        "Механическое повреждение",
+        "Нарушение крепления"
+      ],
+      "unit": "список",
+      "desc": "Классы разметки",
+      "source": "labels.csv"
+    },
+    "dataset.has_coordinates": {
+      "value": false,
+      "unit": "да/нет",
+      "desc": "Координат в разметке нет, ID по имени файла",
+      "source": "labels.csv"
+    },
+    "dataset.has_object_ids": {
+      "value": false,
+      "unit": "да/нет",
+      "desc": "Колонки ID нет: ID = тип + номер файла",
+      "source": "labels.csv"
+    },
+    "dataset.test_images": {
+      "value": null,
+      "unit": "фото",
+      "desc": "Сколько отдельных тестовых фото выдали (слайд 8 вебинара: «тестовые изображения для проверки прототипа»)",
+      "source": "папка тестовых фото организаторов"
+    },
+    "dataset.test_labeled": {
+      "value": null,
+      "unit": "да/нет",
+      "desc": "Есть ли разметка у тестовых фото. Если нет, метрики считаются на основном датасете, и порог подобран на тех же фото",
+      "source": "организаторы"
+    },
+    "run.id": {
+      "value": "dss-final2",
+      "unit": "текст",
+      "desc": "Прогон",
+      "source": "ml/runs"
+    },
+    "run.date": {
+      "value": "26.11 15:18",
+      "unit": "дд.ММ ЧЧ:мм",
+      "desc": "Время отчёта прогона",
+      "source": "ml/runs/dss-final2/report.json mtime"
+    },
+    "run.model": {
+      "value": "google/gemini-decision-1",
+      "unit": "текст",
+      "desc": "Модель",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "run.evaluated": {
+      "value": 61,
+      "unit": "фото",
+      "desc": "Сколько фото оценено против разметки",
+      "source": "report.evaluated"
+    },
+    "run.no_label": {
+      "value": 1,
+      "unit": "фото",
+      "desc": "Фото без метки в таблице",
+      "source": "report.no_label"
+    },
+    "run.api_errors": {
+      "value": 0,
+      "unit": "фото",
+      "desc": "Сбои ответа модели (маршрут error)",
+      "source": "report.api_errors"
+    },
+    "run.wall_s": {
+      "value": 20,
+      "unit": "с",
+      "desc": "Весь датасет через продукт: архив → S3 → Kafka → модель",
+      "source": "Пайплайн решения (PDF команды): «около 20 секунд»"
+    },
+    "run.cost_usd": {
+      "value": "0,014",
+      "unit": "$",
+      "desc": "Стоимость прогона всего датасета",
+      "source": "ml/runs/dss-final2/report.json cost_usd"
+    },
+    "run.cost_per_image_usd": {
+      "value": "0,00022",
+      "unit": "$",
+      "desc": "Цена одного фото",
+      "source": "cost_usd / images"
+    },
+    "run.avg_latency_s": {
+      "value": "1,4",
+      "unit": "с",
+      "desc": "Ответ модели на фото",
+      "source": "ml/runs/dss-final2/report.json avg_latency_s"
+    },
+    "metrics.defects_total": {
+      "value": 41,
+      "unit": "дефектов",
+      "desc": "Фото с дефектом по разметке организаторов (знаменатель главной цифры)",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.defects_missed": {
+      "value": 0,
+      "unit": "дефектов",
+      "desc": "Дефекты, ушедшие в auto_ok или not_observed, то есть не дошедшие до человека",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.defects_reached_human": {
+      "value": 41,
+      "unit": "дефектов",
+      "desc": "Главная цифра: дефекты, ушедшие в review или critical",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.defect_recall": {
+      "value": 100,
+      "unit": "%",
+      "desc": "Та же цифра долей: дефекты, дошедшие до человека, от всех дефектов в разметке",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.critical_total": {
+      "value": 4,
+      "unit": "фото",
+      "desc": "Нарушение крепления по разметке",
+      "source": "labels.csv"
+    },
+    "metrics.critical_reached_human": {
+      "value": 4,
+      "unit": "фото",
+      "desc": "Крепление: дошли до человека",
+      "source": "predictions.jsonl"
+    },
+    "metrics.recall_critical": {
+      "value": 100,
+      "unit": "%",
+      "desc": "Крепление: доля у человека",
+      "source": "predictions.jsonl"
+    },
+    "metrics.critical_routed_alarm": {
+      "value": 3,
+      "unit": "фото",
+      "desc": "Крепление: тревога вне очереди",
+      "source": "predictions.jsonl"
+    },
+    "metrics.accuracy": {
+      "value": "91,8",
+      "unit": "%",
+      "desc": "Вид повреждения верно",
+      "source": "ml/runs/dss-final2/report.json accuracy"
+    },
+    "metrics.macro_f1": {
+      "value": "0,883",
+      "unit": "0..1",
+      "desc": "Macro-F1 по классам. Только A1",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.false_alarm_rate": {
+      "value": 40,
+      "unit": "%",
+      "desc": "Ложные тревоги: доля нормальных по разметке кадров, ушедших людям",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.auto_share": {
+      "value": 18,
+      "unit": "%",
+      "desc": "Доля кадров, закрытых без людей (auto_ok)",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.auto_precision": {
+      "value": 100,
+      "unit": "%",
+      "desc": "Сколько из закрытых без людей действительно норма по разметке",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "metrics.to_humans_share": {
+      "value": 80,
+      "unit": "%",
+      "desc": "Доля кадров, ушедших людям",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "routes.critical": {
+      "value": 14,
+      "unit": "фото",
+      "desc": "Тревога в обход очереди",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "routes.review": {
+      "value": 35,
+      "unit": "фото",
+      "desc": "Очередь проверки",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "routes.auto_ok": {
+      "value": 11,
+      "unit": "фото",
+      "desc": "Норма без человека",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "routes.not_observed": {
+      "value": 1,
+      "unit": "фото",
+      "desc": "Объект не виден",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "thresholds.auto_ok": {
+      "value": "0,6",
+      "default_in_code": 0.85,
+      "unit": "0..1",
+      "desc": "Порог автоподтверждения нормы в прогоне final",
+      "source": "ml/runs/dss-final2/report.json thresholds"
+    },
+    "thresholds.object_min": {
+      "value": "0,75",
+      "default_in_code": 0.75,
+      "unit": "0..1",
+      "desc": "Порог видимости объекта для not_observed",
+      "source": "ml/runs/dss-final2/report.json thresholds"
+    },
+    "thresholds.critical_prob": {
+      "value": "0,5",
+      "default_in_code": 0.5,
+      "unit": "0..1",
+      "desc": "Вероятность уровня «критично» для маршрута critical",
+      "source": "ml/runs/dss-final2/report.json thresholds"
+    },
+    "sweep.chosen_threshold": {
+      "value": "0,6",
+      "unit": "0..1",
+      "desc": "Выбранный порог, выделенная строка таблицы перебора (равен thresholds.auto_ok)",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "sweep.chosen_auto_share": {
+      "value": 18,
+      "unit": "%",
+      "desc": "Доля без людей при выбранном пороге",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "sweep.chosen_defects_missed": {
+      "value": 0,
+      "unit": "дефектов",
+      "desc": "Пропущенные дефекты при выбранном пороге",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "sweep.alt_threshold": {
+      "value": "0,5",
+      "unit": "0..1",
+      "desc": "Ближайший более низкий порог, при котором растёт число пропусков",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "sweep.alt_auto_share": {
+      "value": 28,
+      "unit": "%",
+      "desc": "Доля без людей при alt-пороге",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "sweep.alt_defects_missed": {
+      "value": 1,
+      "unit": "дефектов",
+      "desc": "Пропуски при alt-пороге",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "sweep.rows": {
+      "value": [
+        {
+          "auto_ok": 0.5,
+          "auto_share": 0.2787,
+          "defects_missed": 1
+        },
+        {
+          "auto_ok": 0.6,
+          "auto_share": 0.1803,
+          "defects_missed": 0
+        },
+        {
+          "auto_ok": 0.7,
+          "auto_share": 0.082,
+          "defects_missed": 0
+        },
+        {
+          "auto_ok": 0.75,
+          "auto_share": 0.0328,
+          "defects_missed": 0
+        },
+        {
+          "auto_ok": 0.8,
+          "auto_share": 0.0164,
+          "defects_missed": 0
+        },
+        {
+          "auto_ok": 0.85,
+          "auto_share": 0.0164,
+          "defects_missed": 0
+        },
+        {
+          "auto_ok": 0.9,
+          "auto_share": 0.0,
+          "defects_missed": 0
+        },
+        {
+          "auto_ok": 0.95,
+          "auto_share": 0.0,
+          "defects_missed": 0
+        },
+        {
+          "auto_ok": 1.01,
+          "auto_share": 0.0,
+          "defects_missed": 0
+        }
+      ],
+      "unit": "массив",
+      "desc": "Все строки перебора для графика слайда threshold",
+      "source": "ml/runs/dss-final2/report.json threshold_sweep"
+    },
+    "example.file": {
+      "value": "tksh-36955095.jpg",
+      "unit": "имя файла",
+      "desc": "Сквозной пример: шкаф держится на кабеле",
+      "source": "МП. ТКШ/36955095.png"
+    },
+    "example.object_id": {
+      "value": "ТКШ-36955095",
+      "unit": "ID",
+      "desc": "ID объекта примера, моно на слайдах",
+      "source": "predictions.jsonl"
+    },
+    "example.defect_label": {
+      "value": "Нарушение крепления",
+      "unit": "текст",
+      "desc": "Русская метка класса дефекта примера",
+      "source": "predictions.jsonl"
+    },
+    "example.truth_label": {
+      "value": "ТКШ.удерживается на питающем/оптическом кабеле",
+      "unit": "текст",
+      "desc": "Метка примера в разметке организаторов, слово в слово",
+      "source": "labels.csv"
+    },
+    "example.confidence": {
+      "value": "0.93",
+      "unit": "0..1",
+      "desc": "Уверенность модели на карточке очереди",
+      "source": "predictions.jsonl top_p"
+    },
+    "example.severity_prob": {
+      "value": 96,
+      "unit": "%",
+      "desc": "Вероятность уровня «критично»",
+      "source": "predictions.jsonl p_critical"
+    },
+    "example.route": {
+      "value": "critical",
+      "unit": "ключ",
+      "desc": "Ожидается critical",
+      "source": "predictions.jsonl"
+    },
+    "example.verified_by": {
+      "value": null,
+      "unit": "имя",
+      "desc": "Кто сверил фото с разметкой глазами",
+      "source": "команда"
+    },
+    "example.verified_at": {
+      "value": null,
+      "unit": "ЧЧ:мм",
+      "desc": "Когда сверено",
+      "source": "команда"
+    },
+    "a1.top_confusion_pair": {
+      "value": "деформацию с нормой",
+      "unit": "текст",
+      "desc": "Пара классов с наибольшей ошибкой вне диагонали, «X и Y»",
+      "source": "ml/runs/dss-final2/report.json confusion: МП → Удовлетворительно 2"
+    },
+    "urls.solution": {
+      "value": null,
+      "unit": "URL",
+      "desc": "Стенд для QR «Решение», открывается с телефона жюри",
+      "source": "команда [TODO]"
+    },
+    "urls.solution_short": {
+      "value": null,
+      "unit": "URL",
+      "desc": "Короткая запись под QR, моно",
+      "source": "команда"
+    },
+    "urls.code": {
+      "value": null,
+      "unit": "URL",
+      "desc": "Репозиторий для QR «Код», открыт или с доступом жюри",
+      "source": "github.com/Den4ikAI/mgts_hack_case_3 (сейчас приватный) [НУЖНО ПРОВЕРИТЬ]"
+    },
+    "urls.code_short": {
+      "value": null,
+      "unit": "URL",
+      "desc": "Короткая запись под QR",
+      "source": "команда"
+    },
+    "demo.login": {
+      "value": "dispatcher",
+      "unit": "логин",
+      "desc": "Демо-логин для жюри (роль «Диспетчер»)",
+      "source": "docs/auth.md; пароль на странице входа [НУЖНО ПРОВЕРИТЬ]"
+    },
+    "demo.jury_folder": {
+      "value": null,
+      "unit": "путь",
+      "desc": "Папка для фото жюри внутри MEDIA_ROOT",
+      "source": "оператор"
+    },
+    "demo.recording_time": {
+      "value": null,
+      "unit": "ЧЧ:мм",
+      "desc": "Время записи запасного видео для плашки «ЗАПИСЬ»",
+      "source": "оператор"
+    },
+    "demo.reset_minutes": {
+      "value": null,
+      "unit": "мин",
+      "desc": "Сколько занимает сброс стенда и повторная публикация из кэша",
+      "source": "замер на репетиции"
+    },
+    "run.max_side_px": {
+      "value": 2048,
+      "unit": "px",
+      "desc": "Длинная сторона фото, отправляемого в модель",
+      "source": "ml/README.md, прогон dss-final2"
+    },
+    "metrics.kind_accuracy": {
+      "value": 79,
+      "unit": "%",
+      "desc": "Тип ТКШ/РЩ верно",
+      "source": "ml/runs/dss-final2/report.json kind_accuracy"
+    },
+    "metrics.errors": {
+      "value": 5,
+      "unit": "фото",
+      "desc": "Ошибки вида повреждения",
+      "source": "mistakes.csv"
+    },
+    "thresholds.check_max": {
+      "value": "0,6",
+      "unit": "0..1",
+      "source": "ml/runs/dss-final2/report.json thresholds"
+    },
+    "example.answers": {
+      "value": {
+        "object_p": 0.88,
+        "kind": "ТКШ",
+        "probs": [
+          [
+            "Нарушение крепления",
+            0.932
+          ],
+          [
+            "Механическое повреждение",
+            0.041
+          ],
+          [
+            "Повреждение ЛКП",
+            0.004
+          ],
+          [
+            "Удовлетворительно",
+            0.005
+          ]
+        ],
+        "p_critical": 0.957,
+        "checks": [
+          [
+            "ЛКП",
+            0.512
+          ],
+          [
+            "МП",
+            0.916
+          ],
+          [
+            "Крепление",
+            0.943
+          ]
+        ]
+      },
+      "unit": "объект",
+      "desc": "Ответы модели на вопросы о фото примера",
+      "source": "predictions.jsonl"
+    },
+    "product.rows": {
+      "value": [
+        {
+          "id": "ТКШ-36955095",
+          "kind": "ТКШ",
+          "state": "Нарушение крепления",
+          "status": "critical",
+          "verdict": "повреждён",
+          "rec": "Срочный выезд: закрепить шкаф, оградить зону",
+          "conf": "0.93",
+          "img": {
+            "img": "tksh-36955095-t.jpg",
+            "box": {
+              "x": 0.3667,
+              "y": 0.1667,
+              "w": 0.2666,
+              "h": 0.6666
+            },
+            "cls": "critical",
+            "tag": "Нарушение крепления",
+            "p": "0.93"
+          },
+          "truth": "Нарушение крепления"
+        },
+        {
+          "id": "РЩ-35453689",
+          "kind": "РЩ",
+          "state": "Деформация, МП",
+          "status": "critical",
+          "verdict": "повреждён",
+          "rec": "Срочный выезд: корпус открыт или разрушен",
+          "conf": "0.92",
+          "img": {
+            "img": "rsh-35453689-t.jpg",
+            "box": {
+              "x": 0.21,
+              "y": 0.0,
+              "w": 0.56,
+              "h": 1.0
+            },
+            "cls": "critical",
+            "tag": "Механическое повреждение",
+            "p": "0.92"
+          },
+          "truth": "Механическое повреждение"
+        },
+        {
+          "id": "ТКШ-31093053",
+          "kind": "ТКШ",
+          "state": "Деформация, МП",
+          "status": "defect",
+          "verdict": "повреждён",
+          "rec": "Ремонт корпуса в ближайший выезд",
+          "conf": "0.79",
+          "img": {
+            "img": "tksh-31093053-t.jpg",
+            "box": {
+              "x": 0.11,
+              "y": 0.0,
+              "w": 0.71,
+              "h": 1.0
+            },
+            "cls": "critical",
+            "tag": "Механическое повреждение",
+            "p": "0.79"
+          },
+          "truth": "Механическое повреждение"
+        },
+        {
+          "id": "ТКШ-20251015",
+          "kind": "ТКШ",
+          "state": "Коррозия, ЛКП",
+          "status": "defect",
+          "verdict": "повреждён",
+          "rec": "Зачистка и покраска в плановое ТО",
+          "conf": "0.90",
+          "img": {
+            "img": "tksh-20251015-t.jpg",
+            "box": {
+              "x": 0.44,
+              "y": 0.089,
+              "w": 0.49,
+              "h": 0.7791
+            },
+            "cls": "suspected",
+            "tag": "Повреждение ЛКП",
+            "p": "0.90"
+          },
+          "truth": "Повреждение ЛКП"
+        },
+        {
+          "id": "РЩ-29159065",
+          "kind": "РЩ",
+          "state": "Коррозия, ЛКП",
+          "status": "defect",
+          "verdict": "повреждён",
+          "rec": "Зачистка и покраска в плановое ТО",
+          "conf": "0.95",
+          "img": {
+            "img": "rsh-29159065-t.jpg",
+            "box": {
+              "x": 0.19,
+              "y": 0.0,
+              "w": 0.74,
+              "h": 1.0
+            },
+            "cls": "suspected",
+            "tag": "Повреждение ЛКП",
+            "p": "0.95"
+          },
+          "truth": "Повреждение ЛКП"
+        },
+        {
+          "id": "ТКШ-26224137",
+          "kind": "ТКШ",
+          "state": "Похоже на норму",
+          "status": "suspected",
+          "verdict": "проверить",
+          "rec": "Диспетчер смотрит фото",
+          "conf": "0.53",
+          "img": {
+            "img": "tksh-26224137-t.jpg",
+            "box": {
+              "x": 0.01,
+              "y": 0.0,
+              "w": 0.92,
+              "h": 1.0
+            },
+            "cls": "",
+            "tag": "Норма",
+            "p": "0.53"
+          },
+          "truth": "Механическое повреждение"
+        },
+        {
+          "id": "ТКШ-97363015",
+          "kind": "ТКШ",
+          "state": "Норма",
+          "status": "ok",
+          "verdict": "в норме",
+          "rec": "Ремонт не нужен",
+          "conf": "0.88",
+          "img": {
+            "img": "tksh-97363015-t.jpg",
+            "box": {
+              "x": 0.22,
+              "y": 0.0381,
+              "w": 0.51,
+              "h": 0.9238
+            },
+            "cls": "",
+            "tag": "Норма",
+            "p": "0.88"
+          },
+          "truth": "Удовлетворительно"
+        },
+        {
+          "id": "РЩ-20195471",
+          "kind": "ТКШ",
+          "state": "Шкаф виден плохо",
+          "status": "not_observed",
+          "verdict": "проверить",
+          "rec": "Нужно новое фото",
+          "conf": "0.43",
+          "img": {
+            "img": "rsh-20195471-t.jpg",
+            "box": {
+              "x": 0.3468,
+              "y": 0.1667,
+              "w": 0.3064,
+              "h": 0.6666
+            },
+            "cls": "",
+            "tag": "Норма",
+            "p": "0.43"
+          },
+          "truth": "Удовлетворительно"
+        }
+      ],
+      "unit": "массив",
+      "desc": "Строки перечня, реальные ответы модели",
+      "source": "predictions.jsonl"
+    },
+    "product.total": {
+      "value": 61,
+      "unit": "объектов",
+      "desc": "Объектов в перечне",
+      "source": "predictions.jsonl"
+    },
+    "a1.confusion": {
+      "value": {
+        "names": [
+          "Удовлетворительно",
+          "Повреждение ЛКП",
+          "Механическое повреждение",
+          "Нарушение крепления"
+        ],
+        "matrix": [
+          [
+            19,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            20,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            14,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            3
+          ]
+        ]
+      },
+      "unit": "матрица",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "a1.per_class": {
+      "value": {
+        "ok": {
+          "label": "Удовлетворительно",
+          "support": 20,
+          "precision": 0.864,
+          "recall": 0.95,
+          "f1": 0.905
+        },
+        "paint": {
+          "label": "Повреждение ЛКП",
+          "support": 20,
+          "precision": 0.952,
+          "recall": 1.0,
+          "f1": 0.976
+        },
+        "deformation": {
+          "label": "Механическое повреждение",
+          "support": 17,
+          "precision": 1.0,
+          "recall": 0.824,
+          "f1": 0.903
+        },
+        "mount_failure": {
+          "label": "Нарушение крепления",
+          "support": 4,
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1": 0.75
+        }
+      },
+      "unit": "объект",
+      "source": "ml/runs/dss-final2/report.json"
+    },
+    "a2.mistakes": {
+      "value": [
+        {
+          "id": "ТКШ-26224137",
+          "truth": "Механическое повреждение",
+          "predicted": "Удовлетворительно",
+          "p": "0.53",
+          "route": "review",
+          "desc": "МП.климатического отсека , нижней части двери и корпуса ТКШ.",
+          "img": {
+            "img": "tksh-26224137-m.jpg",
+            "box": {
+              "x": 0.01,
+              "y": 0.0787,
+              "w": 0.92,
+              "h": 0.8426
+            },
+            "cls": "",
+            "tag": "Норма",
+            "p": "0.53"
+          }
+        },
+        {
+          "id": "ТКШ-39104938",
+          "truth": "Нарушение крепления",
+          "predicted": "Удовлетворительно",
+          "p": "0.42",
+          "route": "review",
+          "desc": "Нарушение крепления (ТКШ): отрыв верхних узлов фиксации.",
+          "img": {
+            "img": "tksh-39104938-m.jpg",
+            "box": {
+              "x": 0.247,
+              "y": 0.2368,
+              "w": 0.506,
+              "h": 0.5264
+            },
+            "cls": "",
+            "tag": "Норма",
+            "p": "0.42"
+          }
+        },
+        {
+          "id": "ТКШ-38060694",
+          "truth": "Механическое повреждение",
+          "predicted": "Удовлетворительно",
+          "p": "0.45",
+          "route": "review",
+          "desc": "МП.климатического отсека , корпуса и двери ТКШ.",
+          "img": {
+            "img": "tksh-38060694-m.jpg",
+            "box": {
+              "x": 0.19,
+              "y": 0.1489,
+              "w": 0.73,
+              "h": 0.7022
+            },
+            "cls": "",
+            "tag": "Норма",
+            "p": "0.45"
+          }
+        },
+        {
+          "id": "РЩ-36957664",
+          "truth": "Механическое повреждение",
+          "predicted": "Нарушение крепления",
+          "p": "0.69",
+          "route": "critical",
+          "desc": "РЩ.Нарушение целостности корпуса , РЩ.удерживается на питающем кабеле.",
+          "img": {
+            "img": "rsh-36957664-m.jpg",
+            "box": {
+              "x": 0.2719,
+              "y": 0.2368,
+              "w": 0.4562,
+              "h": 0.5264
+            },
+            "cls": "critical",
+            "tag": "Нарушение крепления",
+            "p": "0.69"
+          }
+        },
+        {
+          "id": "ТКШ-12021864",
+          "truth": "Удовлетворительно",
+          "predicted": "Повреждение ЛКП",
+          "p": "0.50",
+          "route": "review",
+          "desc": "Дефекты ЛКП и МП. Отсутствуют.",
+          "img": {
+            "img": "tksh-12021864-m.jpg",
+            "box": {
+              "x": 0.05,
+              "y": 0.0523,
+              "w": 0.95,
+              "h": 0.8954
+            },
+            "cls": "suspected",
+            "tag": "Повреждение ЛКП",
+            "p": "0.50"
+          }
+        }
+      ],
+      "unit": "массив",
+      "source": "ml/runs/dss-final2/mistakes.csv"
+    },
+    "a3.variants": {
+      "value": [
+        {
+          "name": "Gemini Decision, настроенный промпт, 2048 px",
+          "acc": "91,8 %",
+          "cost": "$0,014",
+          "out": "взяли",
+          "chosen": true
+        },
+        {
+          "name": "Gemini Decision, первый промпт",
+          "acc": "90,2 %",
+          "cost": "$0,011",
+          "out": "хуже находит перекос климатического отсека"
+        },
+        {
+          "name": "Gemini 4 Neon, обычная чат-модель",
+          "acc": "88,5 %",
+          "cost": "$1,05",
+          "out": "нет вероятностей, в 75 раз дороже; пишет описание, читает координаты с фото"
+        },
+        {
+          "name": "Эталонные фото в запросе, few-shot",
+          "acc": "−4…−8 п.п.",
+          "cost": "×5",
+          "out": "модель путает эталон с проверяемым фото"
+        },
+        {
+          "name": "Обрезка по рамке перед классификацией",
+          "acc": "85,2 %",
+          "cost": "",
+          "out": "без опоры в кадре не видно отрыва"
+        },
+        {
+          "name": "TypeSafe Jev 1.14",
+          "acc": "73,8 %",
+          "cost": "$0,013",
+          "out": "слабее как классификатор, годится для рамок"
+        }
+      ],
+      "unit": "массив",
+      "source": "Пайплайн решения (PDF команды), раздел «Что пробовали»; ml/experiment.py"
+    },
+    "dataset.count_paint": {
+      "value": 20,
+      "unit": "фото",
+      "desc": "Фото класса Повреждение ЛКП в разметке",
+      "source": "labels.csv"
+    },
+    "dataset.count_deformation": {
+      "value": 17,
+      "unit": "фото",
+      "desc": "Фото класса Механическое повреждение в разметке",
+      "source": "labels.csv"
+    },
+    "dataset.count_mount": {
+      "value": 4,
+      "unit": "фото",
+      "desc": "Фото класса Нарушение крепления в разметке",
+      "source": "labels.csv"
+    },
+    "dataset.count_ok": {
+      "value": 20,
+      "unit": "фото",
+      "desc": "Фото класса Удовлетворительно в разметке",
+      "source": "labels.csv"
+    },
+    "example.pain": {
+      "value": {
+        "img": "tksh-36955095-pain.jpg",
+        "box": {
+          "x": 0.394,
+          "y": 0.2619,
+          "w": 0.212,
+          "h": 0.4762
+        },
+        "cls": "critical",
+        "tag": "Нарушение крепления",
+        "p": "0.93"
+      },
+      "unit": "кадр",
+      "desc": "Фото примера с рамкой для слайда «Боль»",
+      "source": "boxes.jsonl + ручная правка"
+    },
+    "example.cv": {
+      "value": {
+        "img": "tksh-36955095-cv.jpg",
+        "box": {
+          "x": 0.2871,
+          "y": 0.2368,
+          "w": 0.4258,
+          "h": 0.5264
+        },
+        "cls": "critical",
+        "tag": "Нарушение крепления",
+        "p": "0.93"
+      },
+      "unit": "кадр",
+      "desc": "Фото примера с рамкой для слайда CV",
+      "source": "boxes.jsonl + ручная правка"
+    },
+    "run.cost_rub": {
+      "value": "1,5",
+      "unit": "₽",
+      "desc": "Весь датасет в рублях",
+      "source": "Пайплайн решения (PDF команды): «≈1,5 ₽»"
+    },
+    "run.e2e_s": {
+      "value": 2,
+      "unit": "с",
+      "desc": "От загрузки до вердикта",
+      "source": "Пайплайн решения (PDF команды): «≈2 с от загрузки до вердикта»"
+    },
+    "data.gallery": {
+      "value": [
+        {
+          "img": "tksh-97363015-g.jpg",
+          "box": {
+            "x": 0.03,
+            "y": 0.13,
+            "w": 0.94,
+            "h": 0.83
+          },
+          "cls": "",
+          "tag": "Норма",
+          "p": "0.88",
+          "cls_key": "ok",
+          "label": "Норма",
+          "id": "ТКШ-97363015",
+          "count": 20
+        },
+        {
+          "img": "tksh-20251015-g.jpg",
+          "box": {
+            "x": 0.0484,
+            "y": 0.08,
+            "w": 0.9032,
+            "h": 0.7
+          },
+          "cls": "suspected",
+          "tag": "Повреждение ЛКП",
+          "p": "0.90",
+          "cls_key": "paint",
+          "label": "Коррозия, ЛКП",
+          "id": "ТКШ-20251015",
+          "count": 20
+        },
+        {
+          "img": "rsh-35453689-g.jpg",
+          "box": {
+            "x": 0.21,
+            "y": 0.1142,
+            "w": 0.56,
+            "h": 0.7716
+          },
+          "cls": "critical",
+          "tag": "Механическое повреждение",
+          "p": "0.92",
+          "cls_key": "deformation",
+          "label": "Деформация, МП",
+          "id": "РЩ-35453689",
+          "count": 17
+        },
+        {
+          "img": "tksh-39104955-g.jpg",
+          "box": {
+            "x": 0.1875,
+            "y": 0.2526,
+            "w": 0.625,
+            "h": 0.5656
+          },
+          "cls": "critical",
+          "tag": "Нарушение крепления",
+          "p": "0.92",
+          "cls_key": "mount_failure",
+          "label": "Нарушение крепления",
+          "id": "ТКШ-39104955",
+          "count": 4
+        }
+      ],
+      "unit": "массив",
+      "desc": "По одному фото на класс разметки, с рамкой",
+      "source": "predictions.jsonl + boxes.jsonl"
+    },
+    "dataset.count_tksh": {
+      "value": 30,
+      "unit": "фото",
+      "desc": "Фото ТКШ в разметке",
+      "source": "labels.csv kind"
+    },
+    "dataset.count_rsh": {
+      "value": 31,
+      "unit": "фото",
+      "desc": "Фото РЩ в разметке",
+      "source": "labels.csv kind"
+    },
+    "example.site": {
+      "value": {
+        "img": "tksh-36955095-s.jpg",
+        "box": {
+          "x": 0.3989,
+          "y": 0.2727,
+          "w": 0.2022,
+          "h": 0.4546
+        },
+        "cls": "critical",
+        "tag": "Нарушение крепления",
+        "p": "0.93"
+      },
+      "unit": "кадр",
+      "desc": "Фото примера для слайда «Решение»",
+      "source": "boxes.jsonl + ручная правка"
+    }
+  },
+  "constants": {
+    "source.km_per_trip": {
+      "value": "20–100",
+      "unit": "км",
+      "spoken": "от двадцати до ста километров",
+      "desc": "Сколько проезжает бригада за один выезд, посещая несколько площадок",
+      "source": "профильный вебинар МГТС 12.11.2026, слайд 4"
+    },
+    "source.manual_impossible": {
+      "value": "Контролировать все объекты вручную невозможно.",
+      "desc": "Цитата для слайда pain",
+      "source": "профильный вебинар, слайд 4"
+    },
+    "source.no_extra_trips": {
+      "value": "Маршруты транспорта можно использовать для автоматизированного мониторинга без дополнительных выездов.",
+      "desc": "Цитата, основа обещания",
+      "source": "профильный вебинар, слайд 4"
+    },
+    "source.vehicle_camera": {
+      "value": "В перспективе систему можно подключить к камере служебного автомобиля.",
+      "desc": "Основа слайда impact",
+      "source": "профильный вебинар, слайд 6"
+    },
+    "source.output_fields": {
+      "value": "статус, координаты или ID и рекомендация",
+      "desc": "Что формируется для каждого объекта",
+      "source": "профильный вебинар, слайд 6"
+    },
+    "source.prototype_on_test": {
+      "value": "На финале нужно показать работающий прототип на тестовых данных.",
+      "source": "профильный вебинар, слайд 7"
+    },
+    "source.run_whole_dataset": {
+      "value": "На защите нужно прогнать весь датасет.",
+      "source": "ответ организаторов в чате финалистов, 25.11"
+    },
+    "source.object_kinds": {
+      "value": [
+        "кабельный колодец",
+        "опора двойного назначения"
+      ],
+      "source": "профильный вебинар, слайды 4 и 8"
+    },
+    "source.final_date": {
+      "value": "26.11.2026",
+      "source": "памятка финалиста"
+    },
+    "source.upload_deadline": {
+      "value": "13:25",
+      "source": "памятка финалиста, стр. 3"
+    },
+    "source.express_window": {
+      "value": "13:25–14:30",
+      "desc": "65 минут на все команды аудитории",
+      "source": "памятка финалиста, стр. 3"
+    },
+    "source.superfinal_window": {
+      "value": "16:30–18:00",
+      "desc": "90 минут на 15 команд",
+      "source": "памятка финалиста, стр. 3"
+    },
+    "code.workers": {
+      "value": 8,
+      "unit": "потоков",
+      "source": "ml/worker.py --workers, по умолчанию"
+    },
+    "code.max_side_px": {
+      "value": 1280,
+      "unit": "px",
+      "desc": "Длинная сторона кадра, отправляемого в модель",
+      "source": "ml/worker.py --max-side, по умолчанию"
+    },
+    "code.questions": {
+      "value": [
+        "есть ли объект",
+        "какой объект",
+        "какой дефект",
+        "насколько опасно"
+      ],
+      "source": "ml/taxonomy.json"
+    },
+    "code.severity_levels": {
+      "value": 4,
+      "desc": "Шкала опасности 0–3",
+      "source": "ml/taxonomy.json, web taxonomy.ts"
+    },
+    "code.jwt_access_min": {
+      "value": 15,
+      "unit": "мин",
+      "source": "docs/auth.md"
+    },
+    "smoke.cost_per_image_usd": {
+      "value": "≈0.00016",
+      "unit": "$",
+      "desc": "Цена фото по смоук-тесту. Только запасной ответ на вопрос о цене, пока нет run.cost_per_image_usd",
+      "source": "ml/README.md"
+    },
+    "smoke.latency_s": {
+      "value": "≈1.5",
+      "unit": "с",
+      "desc": "Время ответа по смоук-тесту, запасной ответ",
+      "source": "ml/README.md"
+    }
+  }
+}

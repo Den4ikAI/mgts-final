@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Цвета бренда (design2/brand/tokens.css) -->
+    <color name="poputno_navy_1000">#020913</color> <!-- фон Compose-сплэша: окно и системный сплэш того же цвета, шва нет -->
+    <color name="poputno_icon_bg">#061A2E</color>   <!-- navy-900, плитка favicon -->
+    <color name="poputno_mark">#3A98EE</color>      <!-- signal-400: знак на тёмном, как в favicon -->
+    <color name="poputno_dot">#2ADCF0</color>       <!-- scan-400: точка-объект -->
+
+    <style name="Theme.Poputno" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/poputno_navy_1000</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

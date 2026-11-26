@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Poputno" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/poputno_navy_1000</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- системный сплэш: фон бренда, без иконки (иначе статичный знак мелькнёт перед анимацией) -->
+        <item name="android:windowSplashScreenBackground">@color/poputno_navy_1000</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_empty</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/poputno_navy_1000</item>
+    </style>
+</resources>

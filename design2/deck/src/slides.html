@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Попутно · защита</title>
+<link rel="icon" href="../brand/logo/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../brand/fonts/fonts.css">
+<link rel="stylesheet" href="../brand/tokens.css">
+<link rel="stylesheet" href="../brand/components.css">
+<link rel="stylesheet" href="deck.css">
+<!-- Дека защиты «Попутно» v4. ИСХОДНИК: deck/src/slides.html → python3 tools/build-deck.py → index.html.
+     Треки: ?track=5 (основной, 12 слайдов, 5:00), ?track=3 (7 слайдов, 3:00), ?track=all.
+     Режимы: ?static (последний кадр без движения), ?print (для PDF).
+     Скриншоты сайта: assets/site/{summary,check,queue,objects,quality}.webp, телефона: assets/mobile/*.webp.
+     Замена: положить файл с тем же именем, пересборка не нужна. -->
+</head>
+<body class="deck-body">
+<!--ICONS-->
+<template id="brand-mark"><!--MARK--></template>
+
+<main class="stage" id="stage">
+
+<!-- ================================================================ 01 Обложка -->
+<section class="slide" id="cover" data-bare data-tracks="3 5" data-time="0:10 / 0:10" aria-label="Обложка">
+  <svg class="deco" viewBox="0 0 1920 1080" aria-hidden="true">
+    <path class="route dr" pathLength="1" style="--d:1.9s;--t:.9s" d="M-10 150 H210 L290 230 H520"/>
+    <circle class="nd pop" style="--d:2.5s" cx="210" cy="150" r="8"/><circle class="nd pop" style="--d:2.5s" cx="520" cy="230" r="8"/>
+    <path class="route soft dr" pathLength="1" style="--d:2.0s;--t:.9s" d="M-10 270 H120 L170 220 H330"/>
+    <path class="route dr" pathLength="1" style="--d:2.1s;--t:.9s" d="M1930 120 H1730 L1650 200 H1400"/>
+    <circle class="nd pop" style="--d:2.7s" cx="1730" cy="120" r="8"/><circle class="nd pop" style="--d:2.7s" cx="1400" cy="200" r="8"/>
+    <path class="route soft dr" pathLength="1" style="--d:2.2s;--t:.9s" d="M1930 250 H1800 L1760 290 H1590"/>
+    <path class="route dr" pathLength="1" style="--d:2.3s;--t:.9s" d="M-10 930 H200 L280 1010 H560"/>
+    <circle class="nd pop" style="--d:2.9s" cx="200" cy="930" r="8"/><circle class="nd pop" style="--d:2.9s" cx="560" cy="1010" r="8"/>
+    <path class="route dr" pathLength="1" style="--d:2.4s;--t:.9s" d="M1930 910 H1720 L1640 990 H1380"/>
+    <circle class="nd pop" style="--d:3.0s" cx="1720" cy="910" r="8"/><circle class="nd pop" style="--d:3.0s" cx="1380" cy="990" r="8"/>
+    <path class="route soft dr" pathLength="1" style="--d:2.5s;--t:.9s" d="M1930 1030 H1790 L1750 1070"/>
+    <g class="f" style="--d:3.1s"><path class="brk" d="M600 96 v-18 h18 M680 78 h18 v18 M600 136 v18 h18 M698 154 h-18 v-18"/></g>
+    <g class="f" style="--d:3.2s"><path class="brk" d="M1240 950 v-14 h14 M1300 936 h14 v14 M1240 982 v14 h14 M1314 996 h-14 v-14"/></g>
+  </svg>
+  <div class="lockup">
+    <span data-mark></span>
+    <h1 class="wordmark" style="--wd:.6s">попутно</h1>
+  </div>
+  <p class="tagline a" style="--d:1.35s">Машины уже едут. <em>Инфраструктуру проверяем попутно.</em></p>
+  <p class="descr a" style="--d:1.55s">Мониторинг шкафов и щитов МГТС по фото, дальше с камер служебных машин</p>
+  <div class="cover-chips">
+    <span class="chip a" style="--d:1.8s">команда <b>{{team.name}}</b></span>
+    <span class="chip a" style="--d:1.9s">Кейс МГТС · Код города · сетевая инфраструктура и сервис</span>
+  </div>
+</section>
+
+<!-- ================================================================ 02 Проблема -->
+<section class="slide" id="problem" data-tracks="3 5" data-time="0:25 / 0:25" aria-label="Проблема">
+  <h2 class="title a" style="--d:.1s">Бригада проезжает 20–100 км за выезд, <em>а шкафы на опорах проверяют глазами</em></h2>
+  <div class="pb-facts">
+    <div class="pb-fact panel a hl" style="--d:.35s"><b>20–100<small>км</small></b><span>проезжает бригада за один выезд, по пути несколько площадок</span></div>
+    <div class="pb-fact panel a" style="--d:.5s"><div class="icons"><span class="ic st-suspected">{{@icon_corrosion}}</span><span class="ic st-critical">{{@icon_dent}}</span><span class="ic st-critical">{{@icon_mount}}</span></div><span>коррозия, деформация корпуса и сорванное крепление видны только вблизи</span></div>
+    <div class="pb-fact panel a" style="--d:.65s"><b style="font-size:46px">ТКШ · РЩ</b><span>шкафы и щиты на опорах: телеком-шкаф с климатом и распределительный щит</span></div>
+  </div>
+  {{@problem_shot}}
+  <div class="verdict a" style="--d:1.1s">{{@icon_alert_v}}<span><q>Вручную отслеживать состояние всей инфраструктуры по маршруту невозможно.</q> <em>Нужен перечень: какой объект, что с ним, что делать.</em></span></div>
+</section>
+
+<!-- ================================================================ 03 Данные -->
+<section class="slide" id="data" data-tracks="5" data-time="0:20" aria-label="Данные организаторов">
+  <h2 class="title a" style="--d:.1s">Организаторы дали {{dataset.images}} фото: <em>два типа объектов и четыре класса состояния</em></h2>
+  <div class="vol-left">
+    <div class="vcard panel a hl" style="--d:.3s"><div class="top"><b data-count="{{#dataset.labeled}}">{{dataset.labeled}}</b><span class="unit">фото с разметкой</span></div><p>плюс {{run.no_label}} без разметки. Снимала бригада с руки, крупным планом</p></div>
+    <div class="vcard panel a" style="--d:.42s"><div class="top"><b>{{dataset.count_tksh}}<span class="unit"> ТКШ</span> · {{dataset.count_rsh}}<span class="unit"> РЩ</span></b></div><p>тип объекта указан только в имени папки</p></div>
+    <div class="vcard panel a" style="--d:.54s"><div class="top"><b>0</b><span class="unit">координат</span></div><p>ID берём из имени файла: тип и номер, например ТКШ-36955095</p></div>
+  </div>
+  <div class="gallery">
+{{@gallery}}
+  </div>
+  <div class="facts-row" style="top:940px">
+    <span class="chip sm a" style="--d:1.2s">{{@icon_layers_s}}имена файлов повторяются в разных папках, разметку ищем по пути</span>
+    <span class="chip sm a" style="--d:1.3s">{{@icon_alert_s}}нарушений крепления всего 4: мало для обучения своей сети</span>
+  </div>
+</section>
+
+<!-- ================================================================ 04 Решение -->
+<section class="slide" id="solution" data-tracks="5" data-time="0:25" aria-label="Решение">
+  <h2 class="title a" style="--d:.1s">Каждое фото получает вердикт, <em>человек смотрит только спорное и опасное</em></h2>
+  {{@solution_shot}}
+  <div class="model-node" id="sol-model">{{@icon_eye}}<b>Модель</b><span>5 вопросов<br>вероятность на ответ</span></div>
+  <div class="routes">
+    <div class="route-card panel r-critical a" id="rc-critical" style="--d:1.5s"><span class="ic st-critical">{{@icon_crit}}</span><div><h4>Тревога</h4><p>опасно: в обход очереди, сразу в наряд</p></div><div class="n"><b data-count="{{#routes.critical}}" data-d="1.6">{{routes.critical}}</b><span>фото</span></div></div>
+    <div class="route-card panel r-review a" id="rc-review" style="--d:1.6s"><span class="ic st-suspected">{{@icon_susp}}</span><div><h4>На проверку</h4><p>дефект или неуверенная норма: диспетчеру</p></div><div class="n"><b data-count="{{#routes.review}}" data-d="1.7">{{routes.review}}</b><span>фото</span></div></div>
+    <div class="route-card panel r-ok a" id="rc-ok" style="--d:1.7s"><span class="ic st-ok">{{@icon_ok}}</span><div><h4>Норма</h4><p>модель уверена: закрыто без человека</p></div><div class="n"><b data-count="{{#routes.auto_ok}}" data-d="1.8">{{routes.auto_ok}}</b><span>фото</span></div></div>
+    <div class="route-card r-none a" id="rc-none" style="--d:1.8s"><span class="ic st-not-observed">{{@icon_none}}</span><div><h4>Объект не найден</h4><p>нечего оценивать: переснять кадр</p></div><div class="n"><b data-count="{{#routes.not_observed}}" data-d="1.9">{{routes.not_observed}}</b><span>фото</span></div></div>
+  </div>
+  <div class="verdict a" style="--d:2.3s">{{@icon_check_v}}<span>Видимый дефект не гасится порогом: <em>все {{metrics.defects_total}} дефектов датасета дошли до человека.</em></span></div>
+</section>
+
+<!-- ================================================================ 05 Пайплайн -->
+<section class="slide" id="pipeline" data-tracks="3 5" data-time="0:35 / 0:35" aria-label="Пайплайн и архитектура">
+  <h2 class="title a" style="--d:.1s">Фото доходит до вердикта за {{run.e2e_s}} секунды, <em>история объекта копится в Kafka</em></h2>
+  <div class="lane-src panel a" id="pl-src1" style="top:370px;--d:.3s"><span class="ic">{{@icon_upload}}</span><div><b>«Проверить фото»</b><span>диспетчер перетащил снимки</span></div></div>
+  <div class="lane-src panel a" id="pl-src2" style="top:500px;--d:.4s"><span class="ic">{{@icon_layers}}</span><div><b>Архив организаторов</b><span>zip с фото и разметкой</span></div></div>
+  <div class="lane-src plan a" id="pl-src3" style="top:630px;--d:.5s"><span class="ic">{{@icon_car}}</span><div><b>Камера на машине</b><span>план: кадры с GPS</span></div></div>
+
+  <div class="node panel a" id="pl-api" style="left:540px;top:455px;width:270px;--d:.8s"><span class="badge dark">{{@icon_usercheck_xs}}вход по ролям</span><div class="head"><span class="ic">{{@icon_frame}}</span><h4>API<br><span class="mono" style="font-size:17px;font-weight:500">Rust · axum</span></h4></div><p>проверка файла и роли, ответ клиенту сразу</p></div>
+  <div class="node panel db a" id="pl-s3" style="left:880px;top:760px;width:240px;--d:1.0s"><div class="head"><span class="ic dark">{{@icon_layers}}</span><h4>S3</h4></div><p>сам файл фото</p></div>
+  <div class="node panel db a" id="pl-kafka" style="left:890px;top:455px;width:250px;--d:1.1s"><div class="head"><span class="ic dark">{{@icon_clock}}</span><h4>Kafka</h4></div><p>событие «новый кадр» со ссылкой, журнал истории объекта</p><div class="tags"><span class="tag">frames.ingested</span></div></div>
+  <div class="node panel hero a" id="pl-ml" style="left:1190px;top:415px;width:280px;--d:1.3s"><span class="badge">{{@icon_eye_xs}}компьютерное зрение</span><div class="head"><span class="ic">{{@icon_eye}}</span><h4>ML-воркер</h4></div><p>Gemini Decision: 5 вопросов о фото, вероятность на каждый ответ, правило маршрута</p><div class="tags"><span class="tag">≈{{run.avg_latency_s}} с</span><span class="tag">Python</span><span class="tag">кэш</span></div></div>
+
+  <div class="rt-chip panel r-critical a" id="pl-r1" style="top:340px;--d:1.8s">{{@icon_crit}}<div><b>Тревога</b><span>в обход очереди</span></div></div>
+  <div class="rt-chip panel r-review a" id="pl-r2" style="top:420px;--d:1.85s">{{@icon_susp}}<div><b>На проверку</b><span>очередь диспетчера</span></div></div>
+  <div class="rt-chip panel r-ok a" id="pl-r3" style="top:500px;--d:1.9s">{{@icon_ok}}<div><b>Норма</b><span>закрыто без людей</span></div></div>
+  <div class="rt-chip r-none a" id="pl-r4" style="top:580px;--d:1.95s">{{@icon_none}}<div><b>Не найден</b><span>переснять кадр</span></div></div>
+
+  <div class="node panel out a" id="pl-out" style="left:1300px;top:745px;width:500px;--d:2.1s"><div class="head"><span class="ic">{{@icon_list}}</span><h4>Реестр и экраны · Postgres</h4></div><p>очередь, реестр с рекомендацией, «Качество», выгрузка XLSX и CSV, мобильное приложение</p></div>
+
+  <div class="facts-row" style="top:930px">
+    <span class="chip accent a" style="--d:2.3s"><b>≈{{run.e2e_s}} с</b> от загрузки до вердикта</span>
+    <span class="chip a" style="--d:2.4s"><b>≈{{run.wall_s}} с</b> весь датасет</span>
+    <span class="chip a" style="--d:2.5s"><b>≈{{run.cost_rub}} ₽</b> за весь датасет</span>
+    <span class="chip dash a" data-track-only="3" style="--d:2.6s">своих сетей не обучаем: на 61 фото облачная VLM с вероятностями надёжнее</span>
+  </div>
+  <p class="stack f" style="--d:2.6s">Rust (axum) · Angular · Kafka (Redpanda) · Postgres · S3 · Kotlin Multiplatform · Swagger · роли и JWT</p>
+</section>
+
+<!-- ================================================================ 06 Модель -->
+<section class="slide" id="model" data-tracks="5" data-time="0:25" aria-label="Подход к компьютерному зрению">
+  <h2 class="title a" style="--d:.1s">Модель отвечает на вопросы о фото, <em>а не учится на {{dataset.labeled}} снимке</em></h2>
+  {{@model_shot}}
+  <div class="qa panel a" style="--d:.4s">
+    <div class="hd"><b>Один запрос, пять вопросов</b><span class="chip xs accent">{{run.model}}</span></div>
+{{@answers}}
+  </div>
+  <div class="cls-side">
+    <div class="cls-card panel a" style="--d:1.2s"><div class="head"><span class="ic">{{@icon_chart}}</span><h4>Мало данных</h4></div><p>{{dataset.labeled}} фото и {{dataset.count_mount}} примера крепления: свой детектор переобучится</p></div>
+    <div class="cls-card panel a" style="--d:1.35s"><div class="head"><span class="ic">{{@icon_list}}</span><h4>Классы словами</h4></div><p>новый вид повреждения добавляется строкой в taxonomy.json, без кода</p></div>
+    <div class="cls-card panel hl a" style="--d:1.5s"><div class="head"><span class="ic">{{@icon_filter}}</span><h4>Порог с запасом</h4></div><p>норма закрывается сама при уверенности {{thresholds.auto_ok}} и тишине проверок да или нет</p></div>
+  </div>
+  <div class="facts-row" style="top:950px">
+    <span class="chip accent a" style="--d:1.7s"><b>≈{{run.avg_latency_s}} с</b> ответ на фото</span>
+    <span class="chip a" style="--d:1.8s"><b>${{run.cost_per_image_usd}}</b> за фото</span>
+    <span class="chip a" style="--d:1.9s">ответы в кэше по хэшу фото: повторный прогон бесплатный</span>
+    <span class="chip a" style="--d:2.0s">облачные VLM разрешены организаторами</span>
+  </div>
+</section>
+
+<!-- ================================================================ 07 Результаты -->
+<section class="slide" id="results" data-tracks="3 5" data-time="0:35 / 0:35" aria-label="Результаты на датасете">
+  <h2 class="title a" style="--d:.1s">Весь датасет прогнан: <em>{{metrics.defects_reached_human}} из {{metrics.defects_total}} дефектов дошли до человека</em></h2>
+  <div class="res-left">
+    <div class="vcard panel hl hero a" style="--d:.3s"><div class="top"><b><span data-count="{{#metrics.defects_reached_human}}" data-d=".4">{{metrics.defects_reached_human}}</span><small>из</small>{{metrics.defects_total}}</b></div><p>дефектов у человека, пропусков {{metrics.defects_missed}}</p></div>
+    <div class="vcard panel a" style="--d:.45s"><div class="top"><b><span data-count="{{#metrics.accuracy}}" data-dec="1" data-d=".55">{{metrics.accuracy}}</span> %</b><span class="unit">вид повреждения верно</span></div><p>macro-F1 {{metrics.macro_f1}}, на {{run.evaluated}} фото с разметкой</p></div>
+    <div class="vcard panel a" style="--d:.6s"><div class="top"><b><span data-count="{{#metrics.auto_share}}" data-d=".7">{{metrics.auto_share}}</span> %</b><span class="unit">закрыто без людей</span></div><p>и все верно: модель уверена в норме, проверки молчат</p></div>
+  </div>
+  <div class="sweep panel a" style="--d:.5s">
+    <h4>Порог автоподтверждения нормы</h4>
+    <p class="sub">доля фото, закрытых без человека, и потерянные дефекты</p>
+{{@sweep}}
+  </div>
+  <div class="mrows panel a" style="--d:1.3s">
+    <div class="mrow"><span>Весь датасет</span><b>${{run.cost_usd}} · ≈{{run.cost_rub}} ₽</b></div>
+    <div class="mrow"><span>Ответ модели на фото</span><b>≈{{run.avg_latency_s}} с</b></div>
+    <div class="mrow"><span>Тип ТКШ или РЩ верно</span><b>{{metrics.kind_accuracy}} %</b></div>
+  </div>
+  <div class="facts-row" style="top:930px"><span class="chip sm dash a" style="--d:1.6s">{{@icon_alert_s}}выборка маленькая: промпт подбирали на этих же {{dataset.labeled}} фото, честная оценка на новых снимках</span></div>
+</section>
+
+<!-- ================================================================ 08 Сайт -->
+<section class="slide" id="site" data-tracks="3 5" data-time="0:35 / 0:35" aria-label="Веб-интерфейс">
+  <h2 class="title a" style="--d:.1s">Веб-интерфейс: <em>от загрузки фото до выгрузки перечня</em></h2>
+  <div class="browser a" style="--d:.3s">
+    <div class="bar"><i></i><i></i><i></i><span>poputno / dispatcher</span></div>
+    <div class="scr">
+      <img class="on" src="assets/site/summary.webp" alt="Сводка по объектам">
+      <img src="assets/site/check.webp" alt="Проверить фото">
+      <img src="assets/site/queue.webp" alt="Очередь проверки">
+      <img src="assets/site/objects.webp" alt="Реестр объектов">
+      <img src="assets/site/quality.webp" alt="Качество модели">
+      <div class="miss">скриншот сайта</div>
+    </div>
+  </div>
+  <div class="screens">
+    <div class="scr-item panel on a" style="--d:.5s"><span class="n">1</span><div><b>Сводка</b><span>сколько объектов требуют внимания, критичные сверху</span></div></div>
+    <div class="scr-item panel a" style="--d:.6s"><span class="n">2</span><div><b>Проверить фото</b><span>перетащил снимок, через {{run.e2e_s}} с вердикт и рамка</span></div></div>
+    <div class="scr-item panel a" style="--d:.7s"><span class="n">3</span><div><b>Очередь проверки</b><span>клавиши Y, N, R: подтвердить, ложное, нужен кадр</span></div></div>
+    <div class="scr-item panel a" style="--d:.8s"><span class="n">4</span><div><b>Реестр объектов</b><span>фильтры и «Выгрузить перечень» в XLSX и CSV</span></div></div>
+    <div class="scr-item panel a" style="--d:.9s"><span class="n">5</span><div><b>Качество модели</b><span>точность против разметки и матрица ошибок</span></div></div>
+  </div>
+  <p class="site-link f" style="--d:1.2s">Стенд: <b>den4ikai.github.io/poputno/site</b> · Angular, роли и вход по JWT</p>
+</section>
+
+<!-- ================================================================ 09 Мобильное приложение -->
+<section class="slide" id="mobile" data-tracks="3 5" data-time="0:30 / 0:30" aria-label="Мобильное приложение">
+  <h2 class="title a" style="--d:.1s">Мобильное приложение: <em>диспетчер и бригада в одном клиенте</em></h2>
+  <div class="phones">
+    <div class="phone a" style="--d:.3s"><div class="body"><img src="assets/mobile/queue.webp" alt="Очередь проверки"><div class="miss">скриншот<br>очереди</div></div><h4>Очередь</h4><p>свайп: дефект или норма</p></div>
+    <div class="phone a" style="--d:.42s"><div class="body"><img src="assets/mobile/detail.webp" alt="Карточка кадра"><div class="miss">скриншот<br>карточки</div></div><h4>Карточка кадра</h4><p>рекомендация бригаде и почему модель так решила</p></div>
+    <div class="phone a" style="--d:.54s"><div class="body"><img src="assets/mobile/camera.webp" alt="Камера бригады"><div class="miss">скриншот<br>камеры</div></div><h4>Камера бригады</h4><p>до и после ремонта: общий план, крупно, номер</p></div>
+    <div class="phone a" style="--d:.66s"><div class="body"><img src="assets/mobile/order.webp" alt="Наряд"><div class="miss">скриншот<br>наряда</div></div><h4>Наряд</h4><p>от назначения до приёмки, без трёх кадров «после» не закрыть</p></div>
+  </div>
+  <div class="mob-side">
+    <div class="mob-card panel hl a" style="--d:.9s"><h4>Kotlin Multiplatform и Compose</h4><div class="row"><span class="chip xs accent">Android</span><span class="chip xs accent">iOS</span><span class="chip xs accent">Desktop</span></div></div>
+    <div class="mob-card panel a" style="--d:1.0s"><h4>Четыре роли</h4><div class="row"><span class="chip xs">диспетчер</span><span class="chip xs">руководитель</span><span class="chip xs">бригада</span><span class="chip xs">админ</span></div><p>вход по ролям, тот же API и токены</p></div>
+    <div class="mob-card panel a" style="--d:1.1s"><h4>Тот же бренд</h4><p>токены, шрифты и иконки перенесены из брендбука, уголки рамки на фото и в прицеле камеры</p></div>
+  </div>
+</section>
+
+<!-- ================================================================ 10 Аналоги -->
+<section class="slide" id="rivals" data-tracks="5" data-time="0:20" aria-label="Аналоги">
+  <h2 class="title a" style="--d:.1s">Аналоги смотрят на дорогу с машин, <em>мы на шкафы и щиты на опорах</em></h2>
+  <div class="cmp panel a" style="--d:.3s">
+    <table>
+      <thead><tr><th>Решение</th><th>Что ищет</th><th>Откуда кадры</th><th style="text-align:center">Шкафы и щиты</th><th>Новый вид дефекта</th><th>Цена</th></tr></thead>
+      <tbody>
+        <tr><td><b>Ручной обход</b><span>как сейчас в МГТС</span></td><td>любые объекты, глазами бригады</td><td>осмотр на выезде, фотоотчёт</td><td class="c y">{{@icon_check}}</td><td>обновить чек-лист</td><td>время бригады</td></tr>
+        <tr><td><b>Vialytics</b><span>Германия</span></td><td>покрытие дорог, знаки, люки</td><td>смартфон на стекле служебной машины</td><td class="c n">{{@icon_close}}</td><td>модель вендора</td><td>н/д</td></tr>
+        <tr><td><b>Blyncsy</b><span>Bentley, США</span></td><td>дорожные объекты, 40+ состояний</td><td>видеорегистраторы потока машин</td><td class="c n">{{@icon_close}}</td><td>модель вендора</td><td>от $8 за милю</td></tr>
+        <tr><td><b>NtechLab</b><span>партнёр Ростеха</span></td><td>ямы, люки, ограждения</td><td>камеры общественного транспорта, пилот</td><td class="c n">{{@icon_close}}</td><td>модель вендора</td><td>н/д</td></tr>
+        <tr><td><b>Дроны</b><span>Геоскан и другие</span></td><td>опоры ЛЭП</td><td>отдельный вылет с оператором</td><td class="c p">{{@icon_susp}}</td><td>зависит от ПО</td><td>вылет и оператор</td></tr>
+        <tr class="us"><td><b>Попутно</b><span>мы</span></td><td>ТКШ и РЩ на опорах</td><td>фото бригады, дальше камера машины</td><td class="c y">{{@icon_check}}</td><td>строкой в taxonomy.json</td><td>≈${{run.cost_per_image_usd}} за фото</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src-note f" style="--d:.9s">Источники: vialytics.de/en/system · bentley.com/software/blyncsy · comnews.ru, 12.08.2025, NtechLab · pribor.ifmo.ru, дроны Геоскан для ЛЭП. Данные вендоров, нами не проверены; н/д: цена не опубликована. Готового решения именно для телеком-шкафов мы не нашли.</p>
+</section>
+
+<!-- ================================================================ 11 Масштабирование -->
+<section class="slide" id="scale" data-tracks="5" data-time="0:30" aria-label="Камера на машине">
+  <h2 class="title a" style="--d:.1s">Камера на машине: <em>тот же конвейер плюс GPS и история проездов</em></h2>
+  <div class="rm-line"><i class="gx" style="--d:.4s;--t:1.2s"></i></div>
+  <span class="rm-dot now pop" style="left:calc(120px + 1680px * .115);--d:.6s"></span>
+  <span class="rm-dot pop" style="left:calc(120px + 1680px * .375);--d:.8s"></span>
+  <span class="rm-dot pop" style="left:calc(120px + 1680px * .625);--d:1.0s"></span>
+  <span class="rm-dot pop" style="left:calc(120px + 1680px * .885);--d:1.2s"></span>
+  <div class="phases">
+    <div class="phase panel now a" style="--d:.5s"><span class="st">{{@icon_clock_s}}Сейчас</span><span class="ic">{{@icon_upload}}</span><h3>Фото</h3><ul><li>фото бригады и датасет организаторов</li><li>ID из имени файла</li><li><b>перечень с вердиктом</b> и выгрузка XLSX</li></ul></div>
+    <div class="phase panel plan a" style="--d:.7s"><span class="st">Шаг 1</span><span class="ic">{{@icon_car}}</span><h3>Камера и GPS</h3><ul><li>регистратор снимает по маршруту 20–100 км</li><li>кадры в тот же S3 и топик Kafka</li><li>поля «машина», «курс», «координаты» в событии уже есть</li></ul></div>
+    <div class="phase panel plan a" style="--d:.9s"><span class="st">Шаг 2</span><span class="ic">{{@icon_pin}}</span><h3>Объект во времени</h3><ul><li>ближайший ТКШ или РЩ из реестра по координатам и курсу</li><li><b>«повреждён» по голосованию</b> нескольких проездов</li><li>«не наблюдается», если объект закрыт</li></ul></div>
+    <div class="phase panel plan a" style="--d:1.1s"><span class="st">Шаг 3</span><span class="ic">{{@icon_route}}</span><h3>Итог поездки</h3><ul><li><b>список адресов и координат</b>, куда нужна бригада</li><li>та же таблица XLSX и карта точек</li><li>решения диспетчера копятся как разметка для своей модели</li></ul></div>
+  </div>
+  <div class="facts-row" style="top:930px">
+    <span class="chip accent a" style="--d:1.4s"><b>≈$2 в день</b> за 10 000 кадров по ≈${{run.cost_per_image_usd}}</span>
+    <span class="chip a" style="--d:1.5s">воркеры масштабируются копиями, Kafka делит кадры</span>
+  </div>
+</section>
+
+<!-- ================================================================ 12 Финал -->
+<section class="slide" id="final" data-bare data-tracks="3 5" data-time="0:10 / 0:10" aria-label="Финал">
+  <svg class="deco" viewBox="0 0 1920 1080" aria-hidden="true">
+    <path class="route dr" pathLength="1" style="--d:1.2s;--t:.9s" d="M-10 120 H200 L280 200 H460"/>
+    <circle class="nd pop" style="--d:1.8s" cx="200" cy="120" r="8"/><circle class="nd pop" style="--d:1.8s" cx="460" cy="200" r="8"/>
+    <path class="route dr" pathLength="1" style="--d:1.3s;--t:.9s" d="M1930 140 H1740 L1660 220 H1470"/>
+    <circle class="nd pop" style="--d:1.9s" cx="1740" cy="140" r="8"/><circle class="nd pop" style="--d:1.9s" cx="1470" cy="220" r="8"/>
+    <path class="route soft dr" pathLength="1" style="--d:1.4s;--t:.9s" d="M-10 960 H160 L230 1030 H420"/>
+    <path class="route soft dr" pathLength="1" style="--d:1.5s;--t:.9s" d="M1930 980 H1760 L1700 1040 H1520"/>
+  </svg>
+  <div class="lockup"><span data-mark></span><h1 class="wordmark" style="--wd:.3s">попутно</h1></div>
+  <p class="final-line a" style="--d:.9s">Готовы к вашим вопросам</p>
+  <div class="final-sum">
+    <span class="chip a" style="--d:1.1s"><b>{{dataset.images}} фото</b> прогнано</span>
+    <span class="chip accent a" style="--d:1.2s"><b>{{metrics.defects_reached_human}} из {{metrics.defects_total}}</b> дефектов у человека</span>
+    <span class="chip a" style="--d:1.3s">веб, Android, iOS, Desktop</span>
+  </div>
+  <div class="qrs">
+    <div class="qr a" style="--d:1.4s"><div class="qr-box"><img src="assets/qr/qr-solution.svg" alt="QR: решение"></div><h3>Решение</h3><p>{{urls.solution_short}}</p></div>
+    <div class="qr a" style="--d:1.55s"><div class="qr-box"><img src="assets/qr/qr-code.svg" alt="QR: код"></div><h3>Код</h3><p>{{urls.code_short}}</p></div>
+  </div>
+</section>
+
+<!-- ================================================================ Приложения -->
+<section class="slide appendix" id="A1" data-label="A1" aria-label="Приложение A1, ошибки по классам">
+  <h2 class="title a" style="--d:.1s">Модель дважды спутала {{a1.top_confusion_pair}}, <em>ЛКП различает без ошибок</em></h2>
+  <div class="matrix panel a" style="--d:.3s">{{@confusion}}</div>
+  <div class="cls-tbl tbl panel a" style="--d:.45s;position:absolute;left:1010px;width:790px">{{@per_class}}</div>
+  <p class="app-note">Строки: разметка ДСС, столбцы: ответ модели, прогон {{run.id}}, {{run.evaluated}} фото. <b>Главная цифра не точность, а дефекты у человека:</b> ошибки «МП → норма» ушли диспетчеру, уверенность нормы ниже {{thresholds.auto_ok}}.</p>
+</section>
+
+<section class="slide appendix" id="A2" data-label="A2" aria-label="Приложение A2, ошибки модели">
+  <h2 class="title a" style="--d:.1s">Все {{metrics.errors}} ошибок модели, <em>ни одна не закрыта без человека</em></h2>
+  <div class="mist">
+{{@mistakes}}
+  </div>
+  <p class="app-note">Показываем все ошибки, не выборку. Механическое повреждение, принятое за норму, ушло диспетчеру: уверенность нормы 0,45–0,53, ниже порога {{thresholds.auto_ok}}.</p>
+</section>
+
+<section class="slide appendix" id="A3" data-label="A3" aria-label="Приложение A3, варианты подхода">
+  <h2 class="title a" style="--d:.1s">Пробовали шесть подходов, <em>взяли самый точный: {{metrics.accuracy}} % за ${{run.cost_usd}}</em></h2>
+  <div class="tbl panel a" style="--d:.3s">{{@variants}}</div>
+  <p class="app-note">Все варианты на тех же {{run.evaluated}} фото, ml/experiment.py. Чат-модель почти так же точна, но не даёт вероятностей и в 75 раз дороже. Эталонные фото в запросе путают модель. Обрезка теряет опору, а без опоры не видно отрыва крепления.</p>
+</section>
+
+<section class="slide appendix" id="A4" data-label="A4" aria-label="Приложение A4, стоимость и время">
+  <h2 class="title a" style="--d:.1s">Фото стоит ${{run.cost_per_image_usd}}, <em>весь датасет считается за {{run.wall_s}} секунд</em></h2>
+  <div class="kpis">
+    <div class="vcard panel hl a" style="--d:.3s"><div class="top"><b>${{run.cost_per_image_usd}}</b></div><p>цена одного фото</p></div>
+    <div class="vcard panel a" style="--d:.4s"><div class="top"><b>{{run.avg_latency_s}}<span class="unit"> с</span></b></div><p>ответ модели на фото</p></div>
+    <div class="vcard panel a" style="--d:.5s"><div class="top"><b>{{run.wall_s}}<span class="unit"> с</span></b></div><p>весь датасет через продукт: архив, S3, Kafka, модель</p></div>
+    <div class="vcard panel a" style="--d:.6s"><div class="top"><b>{{run.cost_rub}}<span class="unit"> ₽</span></b></div><p>весь датасет, ${{run.cost_usd}}</p></div>
+  </div>
+  <div class="two">
+    <div class="panel a" style="--d:.7s"><h4>Уходит в облако</h4><p>только фото, длинная сторона {{run.max_side_px}} px, через OpenRouter. Облачные VLM организаторы разрешили.</p></div>
+    <div class="panel a" style="--d:.8s"><h4>Остаётся у МГТС</h4><p>Kafka, Postgres, S3, интерфейс и кэш ответов по хэшу фото. Повторный прогон и смена порогов ничего не стоят.</p></div>
+  </div>
+</section>
+
+<section class="slide appendix" id="A5" data-label="A5" aria-label="Приложение A5, требования постановки">
+  <h2 class="title a" style="--d:.1s">Требования постановки закрыты на стенде, <em>камера машины в плане</em></h2>
+  <div class="tbl panel a" style="--d:.3s">
+    <table>
+      <thead><tr><th>#</th><th>Требование постановки</th><th>Где показано</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td class="m">R1</td><td><b>Прототип принимает фото и выдаёт анализ</b></td><td>«Проверить фото», ML-воркер, прогон датасета</td><td><span class="chip xs st-ok">стенд</span></td></tr>
+        <tr><td class="m">R2</td><td><b>Выявлять объекты инфраструктуры</b></td><td>вопрос «виден ли шкаф», тип ТКШ или РЩ, {{metrics.kind_accuracy}} %</td><td><span class="chip xs st-suspected">частично</span></td></tr>
+        <tr><td class="m">R3</td><td><b>Признаки неудовлетворительного состояния</b></td><td>4 класса, верно {{metrics.accuracy}} %</td><td><span class="chip xs st-ok">стенд</span></td></tr>
+        <tr><td class="m">R4</td><td><b>Статус и рекомендация по каждому объекту</b></td><td>реестр, карточка, выгрузка XLSX и CSV</td><td><span class="chip xs st-ok">стенд</span></td></tr>
+        <tr><td class="m">R5</td><td><b>Перечень объектов для проверки или ремонта</b></td><td>очередь и реестр, ID из имени файла, координат в данных нет</td><td><span class="chip xs st-ok">стенд</span></td></tr>
+        <tr><td class="m">R6</td><td><b>Демонстрация на тестовых данных</b></td><td>прогон тестовых фото на защите</td><td><span class="chip xs accent">на защите</span></td></tr>
+        <tr><td class="m">R7</td><td><b>Архитектура и подход к компьютерному зрению</b></td><td>слайды «Пайплайн» и «Модель»</td><td><span class="chip xs st-ok">стенд</span></td></tr>
+        <tr><td class="m">R8</td><td><b>Масштабирование до камеры машины</b></td><td>слайд «Камера на машине»</td><td><span class="chip xs st-not-observed">план</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="slide appendix" id="A6" data-label="A6" aria-label="Приложение A6, границы">
+  <h2 class="title a" style="--d:.1s">Выборка маленькая, поэтому честно: <em>где у решения границы</em></h2>
+  <div class="lim">
+    <div class="vcard panel hl a" style="--d:.3s"><div class="top"><b>{{dataset.labeled}}<small>фото</small></b></div><p>описания классов правили по ошибкам на этих же фото. Честная оценка будет на тестовых фото защиты</p></div>
+    <div class="vcard panel a" style="--d:.42s"><div class="top"><b>{{metrics.kind_accuracy}}<small>%</small></b></div><p>тип ТКШ или РЩ верно: модель оценивает один главный объект, а на опоре часто висят оба</p></div>
+    <div class="vcard panel a" style="--d:.54s"><div class="top"><b>{{metrics.false_alarm_rate}}<small>%</small></b></div><p>нормальных шкафов уходят людям: больше работы диспетчеру, но дефект не теряется</p></div>
+    <div class="vcard panel a" style="--d:.66s"><div class="top"><b>2<small>из {{dataset.images}}</small></b></div><p>фото с координатами (EXIF и надпись на кадре), поэтому карта пока план, а не результат</p></div>
+  </div>
+  <p class="app-note">Облако: без интернета работает только кэш уже виденных фото. Лица и номера пока не размываем.</p>
+</section>
+
+</main>
+<script src="deck.js"></script>
+</body>
+</html>

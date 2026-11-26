@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Знак «Попутно» (design2/brand/logo/mark.svg, сетка 64) в безопасной зоне адаптивной иконки:
+     холст 108 dp, знак 57.6 dp по центру — углы рамки внутри круга 66 dp при любой маске. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="25.2" android:translateY="25.2" android:scaleX="0.9" android:scaleY="0.9">
+            <path android:fillColor="@color/poputno_mark" android:pathData="M3,29H21V35H0Z M43,29H64L61,35H43Z"/>
+            <path android:fillColor="@color/poputno_mark" android:pathData="M8,25V10A2,2 0,0 1,10 8H25V14H14V25Z M39,8H54A2,2 0,0 1,56 10V25H50V14H39Z M56,39V54A2,2 0,0 1,54 56H39V50H50V39Z M25,56H10A2,2 0,0 1,8 54V39H14V50H25Z"/>
+            <path android:fillColor="@color/poputno_dot" android:pathData="M24,32a8,8 0,1 0,16 0a8,8 0,1 0,-16 0Z"/>
+    </group>
+</vector>
